@@ -1,0 +1,4 @@
+rootProject.name = 'thu-info-mailcore'
+include ':mailcore2-android-4'
+project(':mailcore2-android-4').projectDir = new File(rootProject.projectDir, './mailcore2-android-4')
+include ':android'
