@@ -3,8 +3,6 @@ package com.reactlibrary
 import com.facebook.react.bridge.*
 
 class RNMailCoreModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
-    private val mailClient = MailClient()
-
     private val imapClient = IMAPClient()
 
     private val smtpClient = SMTPClient()
@@ -33,17 +31,17 @@ class RNMailCoreModule(reactContext: ReactApplicationContext) : ReactContextBase
 
     @ReactMethod
     fun createFolder(obj: ReadableMap, promise: Promise) {
-        safeWrapper(promise) { mailClient.createFolderLabel(obj, promise) }
+        TODO("`createFolder` is not supported yet.")
     }
 
     @ReactMethod
     fun renameFolder(obj: ReadableMap, promise: Promise) {
-        safeWrapper(promise) { mailClient.renameFolderLabel(obj, promise) }
+        TODO("`renameFolder` is not supported yet.")
     }
 
     @ReactMethod
     fun deleteFolder(obj: ReadableMap, promise: Promise) {
-        safeWrapper(promise) { mailClient.deleteFolderLabel(obj, promise) }
+        TODO("`deleteFolder` is not supported yet.")
     }
 
     @ReactMethod
@@ -53,22 +51,22 @@ class RNMailCoreModule(reactContext: ReactApplicationContext) : ReactContextBase
 
     @ReactMethod
     fun moveEmail(obj: ReadableMap, promise: Promise) {
-        safeWrapper(promise) { mailClient.moveEmail(obj, promise) }
+        TODO("`moveEmail` is not supported yet.")
     }
 
     @ReactMethod
     fun permanentDeleteEmail(obj: ReadableMap, promise: Promise) {
-        safeWrapper(promise) { mailClient.permanentDelete(obj, promise) }
+        TODO("`permanentDeleteEmail` is not supported yet.")
     }
 
     @ReactMethod
     fun actionFlagMessage(obj: ReadableMap, promise: Promise) {
-        safeWrapper(promise) { mailClient.actionFlagMessage(obj, promise) }
+        TODO("`actionFlagMessage` is not supported yet.")
     }
 
     @ReactMethod
     fun actionLabelMessage(obj: ReadableMap, promise: Promise) {
-        safeWrapper(promise) { mailClient.actionLabelMessage(obj, promise) }
+        TODO("`actionLabelMessage` is not supported yet.")
     }
 
     @ReactMethod
@@ -83,12 +81,12 @@ class RNMailCoreModule(reactContext: ReactApplicationContext) : ReactContextBase
 
     @ReactMethod
     fun getAttachment(obj: ReadableMap, promise: Promise) {
-        safeWrapper(promise) { mailClient.getAttachment(obj, promise) }
+        TODO("`getAttachment` is not supported yet.")
     }
 
     @ReactMethod
     fun getAttachmentInline(obj: ReadableMap, promise: Promise) {
-        safeWrapper(promise) { mailClient.getAttachmentInline(obj, promise) }
+        TODO("`getAttachmentInline` is not supported yet.")
     }
 
     @ReactMethod
@@ -98,22 +96,22 @@ class RNMailCoreModule(reactContext: ReactApplicationContext) : ReactContextBase
 
     @ReactMethod
     fun getMailsThread(obj: ReadableMap, promise: Promise) {
-        safeWrapper(promise) { mailClient.getMailsThread(obj, promise) }
+        TODO("`getMailsThread` is not supported yet.")
     }
 
     @ReactMethod
     fun statusFolder(obj: ReadableMap, promise: Promise) {
-        safeWrapper(promise) { mailClient.statusFolder(obj, promise) }
+        TODO("`statusFolder` is not supported yet.")
     }
 
     @ReactMethod
     fun getMailsByRange(obj: ReadableMap, promise: Promise) {
-        safeWrapper(promise) { mailClient.getMailsByRange(obj, promise) }
+        TODO("`getMailsByRange` is not supported yet.")
     }
 
     @ReactMethod
     fun getMailsByThread(obj: ReadableMap, promise: Promise) {
-        safeWrapper(promise) { mailClient.getMailsByThread(obj, promise) }
+        TODO("`getMailsByThread` is not supported yet.")
     }
 
 }
