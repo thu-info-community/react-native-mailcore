@@ -1,1054 +1,887 @@
-package com.reactlibrary;
+package com.reactlibrary
 
-import com.facebook.react.bridge.Arguments;
-import com.facebook.react.bridge.Promise;
-import com.facebook.react.bridge.ReactApplicationContext;
-import com.facebook.react.bridge.ReactContextBaseJavaModule;
-import com.facebook.react.bridge.ReactMethod;
-import com.facebook.react.bridge.ReadableMap;
-import com.facebook.react.bridge.WritableMap;
-import com.facebook.react.bridge.WritableArray;
-import com.facebook.react.bridge.ReadableArray;
-import com.facebook.react.bridge.WritableNativeArray;
-import com.facebook.react.bridge.ReadableMapKeySetIterator;
+import android.app.Activity
+import android.net.Uri
+import android.util.Base64
+import com.facebook.react.bridge.*
+import com.libmailcore.*
+import java.io.*
+import java.util.*
 
-import com.libmailcore.AbstractPart;
-import com.libmailcore.Attachment;
-import com.libmailcore.IMAPFolderStatusOperation;
-import com.libmailcore.IMAPPart;
-import com.libmailcore.IMAPSearchExpression;
-import com.libmailcore.IndexSet;
-import com.libmailcore.Range;
-import com.libmailcore.Address;
-import com.libmailcore.AuthType;
-import com.libmailcore.ConnectionType;
-import com.libmailcore.MailException;
-import com.libmailcore.MessageBuilder;
-import com.libmailcore.MessageHeader;
-import com.libmailcore.OperationCallback;
-import com.libmailcore.SMTPOperation;
-import com.libmailcore.SMTPSession;
-import com.libmailcore.IMAPSession;
-import com.libmailcore.IMAPOperation;
-import com.libmailcore.IMAPFetchContentOperation;
-import com.libmailcore.IMAPFetchFoldersOperation;
-import com.libmailcore.IMAPFetchMessagesOperation;
-import com.libmailcore.IMAPFetchParsedContentOperation;
-import com.libmailcore.IMAPFolder;
-import com.libmailcore.MessageFlag;
-import com.libmailcore.IMAPSearchOperation;
-import com.libmailcore.IMAPFetchMessagesOperation;
-import com.libmailcore.IMAPFetchParsedContentOperation;
-import com.libmailcore.MessageParser;
-import com.libmailcore.IMAPMessage;
-
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-
-import java.io.InputStream;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Arrays;
-import java.util.ListIterator;
-import java.util.Map;
-
-import android.app.Activity;
-import android.content.ContentResolver;
-import android.net.Uri;
-import android.util.Base64;
-
-import static com.libmailcore.IMAPMessagesRequestKind.IMAPMessagesRequestKindFlags;
-import static com.libmailcore.IMAPMessagesRequestKind.IMAPMessagesRequestKindHeaderSubject;
-import static com.libmailcore.IMAPMessagesRequestKind.IMAPMessagesRequestKindHeaders;
-import static com.libmailcore.IMAPMessagesRequestKind.IMAPMessagesRequestKindInternalDate;
-import static com.libmailcore.IMAPMessagesRequestKind.IMAPMessagesRequestKindStructure;
-
-public class MailClient {
-
-    public SMTPSession smtpSession;
-    public IMAPSession imapSession;
-
-    public void initIMAPSession(UserCredential userCredential,final Promise promise){
-        imapSession = new IMAPSession();
-        imapSession.setHostname(userCredential.getHostname());
-        imapSession.setPort(userCredential.getPort());
-        imapSession.setConnectionType(ConnectionType.ConnectionTypeTLS);
-
-        int authType = userCredential.getAuthType();
-        imapSession.setAuthType(authType);
+class MailClient {
+    var smtpSession: SMTPSession? = null
+    var imapSession: IMAPSession? = null
+    fun initIMAPSession(userCredential: UserCredential, promise: Promise) {
+        imapSession = IMAPSession()
+        imapSession!!.setHostname(userCredential.hostname)
+        imapSession!!.setPort(userCredential.port)
+        imapSession!!.setConnectionType(ConnectionType.ConnectionTypeTLS)
+        val authType = userCredential.authType
+        imapSession!!.setAuthType(authType)
         if (authType == AuthType.AuthTypeXOAuth2) {
-            imapSession.setOAuth2Token(userCredential.getPassword());
+            imapSession!!.setOAuth2Token(userCredential.password)
         } else {
-            imapSession.setPassword(userCredential.getPassword());
+            imapSession!!.setPassword(userCredential.password)
         }
-        imapSession.setUsername(userCredential.getUsername());
-        
-        IMAPOperation imapOperation = this.imapSession.checkAccountOperation();
-        imapOperation.start(new OperationCallback() {
-            @Override
-            public void succeeded() {
-                WritableMap result = Arguments.createMap();
-                result.putString("status", "SUCCESS");
-                promise.resolve(result);
+        imapSession!!.setUsername(userCredential.username)
+        val imapOperation = imapSession!!.checkAccountOperation()
+        imapOperation.start(object : OperationCallback {
+            override fun succeeded() {
+                val result = Arguments.createMap()
+                result.putString("status", "SUCCESS")
+                promise.resolve(result)
             }
-            @Override
-            public void failed(MailException e) {
-                promise.reject(String.valueOf(e.errorCode()), e.getMessage());
+
+            override fun failed(e: MailException) {
+                promise.reject(e.errorCode().toString(), e.message)
             }
-        });
+        })
     }
 
-    public void initSMTPSession(UserCredential userCredential,final Promise promise){
-        smtpSession = new SMTPSession();
-        smtpSession.setHostname(userCredential.getHostname());
-        smtpSession.setPort(userCredential.getPort());
-        smtpSession.setConnectionType(ConnectionType.ConnectionTypeTLS);
-
-        int authType = userCredential.getAuthType();
-        smtpSession.setAuthType(authType);
+    fun initSMTPSession(userCredential: UserCredential, promise: Promise) {
+        smtpSession = SMTPSession()
+        smtpSession!!.setHostname(userCredential.hostname)
+        smtpSession!!.setPort(userCredential.port)
+        smtpSession!!.setConnectionType(ConnectionType.ConnectionTypeTLS)
+        val authType = userCredential.authType
+        smtpSession!!.setAuthType(authType)
         if (authType == AuthType.AuthTypeXOAuth2) {
-            smtpSession.setOAuth2Token(userCredential.getPassword());
+            smtpSession!!.setOAuth2Token(userCredential.password)
         } else {
-            smtpSession.setPassword(userCredential.getPassword());
+            smtpSession!!.setPassword(userCredential.password)
         }
-        smtpSession.setUsername(userCredential.getUsername());
+        smtpSession!!.setUsername(userCredential.username)
+        val smtpOperation = smtpSession!!.loginOperation()
+        smtpOperation.start(object : OperationCallback {
+            override fun succeeded() {
+                val result = Arguments.createMap()
+                result.putString("status", "SUCCESS")
+                promise.resolve(result)
+            }
 
-        SMTPOperation smtpOperation = this.smtpSession.loginOperation();
-        smtpOperation.start(new OperationCallback() {
-            @Override
-            public void succeeded() {
-                WritableMap result = Arguments.createMap();
-                result.putString("status", "SUCCESS");
-                promise.resolve(result);
+            override fun failed(e: MailException) {
+                promise.reject(e.errorCode().toString(), e.message)
             }
-            @Override
-            public void failed(MailException e) {
-                promise.reject(String.valueOf(e.errorCode()), e.getMessage());
-            }
-        });
+        })
     }
 
-    public void sendMail(final ReadableMap obj, final Promise promise, final Activity currentActivity) {
-        MessageHeader messageHeader = new MessageHeader();
+    fun sendMail(obj: ReadableMap, promise: Promise, currentActivity: Activity) {
+        val messageHeader = MessageHeader()
         if (obj.hasKey("headers")) {
-            ReadableMap headerObj = obj.getMap("headers");
-            ReadableMapKeySetIterator headerIterator = headerObj.keySetIterator();
+            val headerObj = obj.getMap("headers")
+            val headerIterator = headerObj!!.keySetIterator()
             while (headerIterator.hasNextKey()) {
-                String header = headerIterator.nextKey();
-                String headerValue = headerObj.getString(header);
-                messageHeader.setExtraHeader(header, headerValue);
+                val header = headerIterator.nextKey()
+                val headerValue = headerObj.getString(header)
+                messageHeader.setExtraHeader(header, headerValue)
             }
         }
-        ReadableMap fromObj = obj.getMap("from");
-        final Address fromAddress = new Address();
-        fromAddress.setDisplayName(fromObj.getString("addressWithDisplayName"));
-        fromAddress.setMailbox(fromObj.getString("mailbox"));
-        messageHeader.setFrom(fromAddress);
-
-        ReadableMap toObj = obj.getMap("to");
-        ReadableMapKeySetIterator iterator = toObj.keySetIterator();
-        ArrayList<Address> toAddressList = new ArrayList();
+        val fromObj = obj.getMap("from")
+        val fromAddress = Address()
+        fromAddress.setDisplayName(fromObj!!.getString("addressWithDisplayName"))
+        fromAddress.setMailbox(fromObj.getString("mailbox"))
+        messageHeader.setFrom(fromAddress)
+        val toObj = obj.getMap("to")
+        var iterator = toObj!!.keySetIterator()
+        val toAddressList: ArrayList<Address?> = ArrayList()
         while (iterator.hasNextKey()) {
-            String toMail = iterator.nextKey();
-            String toName = toObj.getString(toMail);
-            Address toAddress = new Address();
-            toAddress.setDisplayName(toName);
-            toAddress.setMailbox(toMail);
-            toAddressList.add(toAddress);
+            val toMail = iterator.nextKey()
+            val toName = toObj.getString(toMail)
+            val toAddress = Address()
+            toAddress.setDisplayName(toName)
+            toAddress.setMailbox(toMail)
+            toAddressList.add(toAddress)
         }
-
-        messageHeader.setTo(toAddressList);
-
-        ArrayList<Address> ccAddressList = new ArrayList();
+        messageHeader.setTo(toAddressList)
+        val ccAddressList: ArrayList<Address?> = ArrayList()
         if (obj.hasKey("cc")) {
-            ReadableMap ccObj = obj.getMap("cc");
-            iterator = ccObj.keySetIterator();
+            val ccObj = obj.getMap("cc")
+            iterator = ccObj!!.keySetIterator()
             while (iterator.hasNextKey()) {
-                String ccMail = iterator.nextKey();
-                String ccName = ccObj.getString(ccMail);
-                Address ccAddress = new Address();
-                ccAddress.setDisplayName(ccName);
-                ccAddress.setMailbox(ccMail);
-                ccAddressList.add(ccAddress);
+                val ccMail = iterator.nextKey()
+                val ccName = ccObj.getString(ccMail)
+                val ccAddress = Address()
+                ccAddress.setDisplayName(ccName)
+                ccAddress.setMailbox(ccMail)
+                ccAddressList.add(ccAddress)
             }
-            messageHeader.setCc(ccAddressList);
+            messageHeader.setCc(ccAddressList)
         }
-
-        ArrayList<Address> bccAddressList = new ArrayList();
+        val bccAddressList: ArrayList<Address?> = ArrayList()
         if (obj.hasKey("bcc")) {
-            ReadableMap bccObj = obj.getMap("bcc");
-            iterator = bccObj.keySetIterator();
+            val bccObj = obj.getMap("bcc")
+            iterator = bccObj!!.keySetIterator()
             while (iterator.hasNextKey()) {
-                String bccMail = iterator.nextKey();
-                String bccName = bccObj.getString(bccMail);
-                Address bccAddress = new Address();
-                bccAddress.setDisplayName(bccName);
-                bccAddress.setMailbox(bccMail);
-                bccAddressList.add(bccAddress);
+                val bccMail = iterator.nextKey()
+                val bccName = bccObj.getString(bccMail)
+                val bccAddress = Address()
+                bccAddress.setDisplayName(bccName)
+                bccAddress.setMailbox(bccMail)
+                bccAddressList.add(bccAddress)
             }
-            messageHeader.setBcc(bccAddressList);
+            messageHeader.setBcc(bccAddressList)
         }
         if (obj.hasKey("subject")) {
-            messageHeader.setSubject(obj.getString("subject"));
+            messageHeader.setSubject(obj.getString("subject"))
         }
-        final MessageBuilder messageBuilder = new MessageBuilder();
-        messageBuilder.setHeader(messageHeader);
+        val messageBuilder = MessageBuilder()
+        messageBuilder.setHeader(messageHeader)
         if (obj.hasKey("body")) {
-            messageBuilder.setHTMLBody(obj.getString("body"));
+            messageBuilder.setHTMLBody(obj.getString("body"))
         }
         if (obj.hasKey("attachments")) {
-            ReadableArray attachments = obj.getArray("attachments");
-            for (int i = 0; i < attachments.size(); i++) {
-                ReadableMap attachment = attachments.getMap(i);
-
-                if (attachment.getString("uniqueId") != null)
-                    continue;
-
-                String pathName = attachment.getString("uri");
-                String fileName = attachment.getString("filename");
-                File file = new File(pathName);
+            val attachments = obj.getArray("attachments")
+            for (i in 0 until attachments!!.size()) {
+                val attachment = attachments.getMap(i)
+                if (attachment!!.getString("uniqueId") != null) continue
+                val pathName = attachment.getString("uri")
+                val fileName = attachment.getString("filename")
+                val file = File(pathName)
                 try {
-                    long size = 0;
-                    InputStream buf = null;
-                    Uri uri = Uri.parse(pathName);
-                    if (uri.getScheme().equals("content")) {
-                        ContentResolver contentResolver = currentActivity.getContentResolver();
-                        buf = contentResolver.openInputStream(uri);
-                        size = contentResolver.openFileDescriptor(uri, "r").getStatSize();
+                    var size: Long
+                    var buf: InputStream
+                    val uri = Uri.parse(pathName)
+                    if (uri.scheme == "content") {
+                        val contentResolver = currentActivity.contentResolver
+                        @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
+                        buf = contentResolver.openInputStream(uri)
+                        @Suppress("RECEIVER_NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
+                        size = contentResolver.openFileDescriptor(uri, "r").statSize
                     } else {
-                        buf = new BufferedInputStream(new FileInputStream(file));
-                        size = file.length();
+                        buf = BufferedInputStream(FileInputStream(file))
+                        size = file.length()
                     }
-                    byte[] bytes = new byte[(int) size];
-
-
-                    buf.read(bytes, 0, bytes.length);
-                    buf.close();
-                    WritableMap result = Arguments.createMap();
-                    result.putString("status", bytes.toString());
-                    promise.resolve(result);
-                    messageBuilder.addAttachment(Attachment.attachmentWithData(fileName, bytes));
-                } catch (FileNotFoundException e) {
-                    promise.reject("Attachments", e.getMessage());
-                    return;
-                } catch (IOException e) {
-                    promise.reject("Attachments", e.getMessage());
-                    return;
+                    val bytes = ByteArray(size.toInt())
+                    buf.read(bytes, 0, bytes.size)
+                    buf.close()
+                    val result = Arguments.createMap()
+                    result.putString("status", bytes.toString())
+                    promise.resolve(result)
+                    messageBuilder.addAttachment(Attachment.attachmentWithData(fileName, bytes))
+                } catch (e: FileNotFoundException) {
+                    promise.reject("Attachments", e.message)
+                    return
+                } catch (e: IOException) {
+                    promise.reject("Attachments", e.message)
+                    return
                 }
             }
         }
-
-        final ArrayList<Address> allRecipients = new ArrayList<>();
-        allRecipients.addAll(toAddressList);
-        allRecipients.addAll(ccAddressList);
-        allRecipients.addAll(bccAddressList);
-
+        val allRecipients = ArrayList<Address?>()
+        allRecipients.addAll(toAddressList)
+        allRecipients.addAll(ccAddressList)
+        allRecipients.addAll(bccAddressList)
         if (obj.isNull("original_id")) {
+            val smtpOperation = smtpSession!!.sendMessageOperation(fromAddress, allRecipients, messageBuilder.data())
+            currentActivity.runOnUiThread {
+                smtpOperation.start(object : OperationCallback {
+                    override fun succeeded() {
+                        val result = Arguments.createMap()
+                        result.putString("status", "SUCCESS")
+                        promise.resolve(result)
+                    }
 
-            final SMTPOperation smtpOperation = smtpSession.sendMessageOperation(fromAddress, allRecipients, messageBuilder.data());
-            currentActivity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    smtpOperation.start(new OperationCallback() {
-                        @Override
-                        public void succeeded() {
-                            WritableMap result = Arguments.createMap();
-                            result.putString("status", "SUCCESS");
-                            promise.resolve(result);
-                        }
-
-                        @Override
-                        public void failed(MailException e) {
-                            promise.reject(String.valueOf(e.errorCode()), e.getMessage());
-                        }
-                    });
-                }
-            });
+                    override fun failed(e: MailException) {
+                        promise.reject(e.errorCode().toString(), e.message)
+                    }
+                })
+            }
         } else {
-            currentActivity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-            long original_id = (long) obj.getInt("original_id");
-            // Long original_id = ((Double)obj.getDouble("original_id")).longValue();
-            String original_folder = obj.getString("original_folder");
-            final IMAPFetchContentOperation fetchOriginalMessageOperation = imapSession.fetchMessageByUIDOperation(original_folder, original_id);
-            currentActivity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    fetchOriginalMessageOperation.start(new OperationCallback() {
-                        @Override
-                        public void succeeded() {
-                            MessageParser messageParser = MessageParser.messageParserWithData(fetchOriginalMessageOperation.data());
+            currentActivity.runOnUiThread {
+                val originalId = obj.getInt("original_id").toLong()
+                val originalFolder = obj.getString("original_folder")
+                val fetchOriginalMessageOperation = imapSession!!.fetchMessageByUIDOperation(originalFolder, originalId)
+                currentActivity.runOnUiThread {
+                    fetchOriginalMessageOperation.start(object : OperationCallback {
+                        override fun succeeded() {
+                            val messageParser = MessageParser.messageParserWithData(fetchOriginalMessageOperation.data())
 
                             // https://github.com/MailCore/mailcore2/blob/master/src/core/abstract/MCMessageHeader.cpp#L1197
                             if (messageParser.header().messageID() != null) {
-                                messageBuilder.header().setInReplyTo(new ArrayList<>(Arrays.asList(messageParser.header().messageID())));
+                                messageBuilder.header().setInReplyTo(ArrayList(listOf(messageParser.header().messageID())))
                             }
-
-                            if(messageParser.header().references() != null) {
-                                ArrayList<String> newReferences = new ArrayList<>(messageParser.header().references());
+                            if (messageParser.header().references() != null) {
+                                val newReferences = ArrayList(messageParser.header().references())
                                 if (messageParser.header().messageID() != null) {
-                                    newReferences.add(messageParser.header().messageID());
+                                    newReferences.add(messageParser.header().messageID())
                                 }
-                                messageBuilder.header().setReferences(newReferences);
+                                messageBuilder.header().setReferences(newReferences)
                             }
 
                             // set original attachments if they were any left
                             if (obj.hasKey("attachments")) {
-                                ReadableArray attachments = obj.getArray("attachments");
-
-                                for (int i = 0; i < attachments.size(); i++) {
-                                    ReadableMap attachment = attachments.getMap(i);
-
-                                    if (attachment.getString("uniqueId") == null)
-                                        continue;
-
-                                    for (AbstractPart abstractPart : messageParser.attachments()) {
-                                        if (abstractPart instanceof Attachment) {
-                                            Attachment original_attachment = (Attachment) abstractPart;
-
-                                            if (!original_attachment.uniqueID().equals(attachment.getString("uniqueId")))
-                                                continue;
-
-                                            messageBuilder.addAttachment(original_attachment);
+                                val attachments = obj.getArray("attachments")
+                                for (i in 0 until attachments!!.size()) {
+                                    val attachment = attachments.getMap(i)
+                                    if (attachment!!.getString("uniqueId") == null) continue
+                                    for (abstractPart in messageParser.attachments()) {
+                                        if (abstractPart is Attachment) {
+                                            if (abstractPart.uniqueID() != attachment.getString("uniqueId")) continue
+                                            messageBuilder.addAttachment(abstractPart)
                                         }
                                     }
                                 }
                             }
-
-                            final SMTPOperation smtpOperation = smtpSession.sendMessageOperation(fromAddress, allRecipients, messageBuilder.data());
-                            smtpOperation.start(new OperationCallback() {
-                                @Override
-                                public void succeeded() {
-                                    WritableMap result = Arguments.createMap();
-                                    result.putString("status", "SUCCESS");
-                                    promise.resolve(result);
+                            val smtpOperation = smtpSession!!.sendMessageOperation(fromAddress, allRecipients, messageBuilder.data())
+                            smtpOperation.start(object : OperationCallback {
+                                override fun succeeded() {
+                                    val result = Arguments.createMap()
+                                    result.putString("status", "SUCCESS")
+                                    promise.resolve(result)
                                 }
 
-                                @Override
-                                public void failed(MailException e) {
-                                    promise.reject(String.valueOf(e.errorCode()), e.getMessage());
+                                override fun failed(e: MailException) {
+                                    promise.reject(e.errorCode().toString(), e.message)
                                 }
-                            });
+                            })
                         }
 
-                        @Override
-                        public void failed(MailException e) {
-                            promise.reject(String.valueOf(e.errorCode()), e.getMessage());
+                        override fun failed(e: MailException) {
+                            promise.reject(e.errorCode().toString(), e.message)
                         }
-                    });
+                    })
                 }
-            });
-                }
-            });
+            }
         }
-
     }
 
-    public void getMail(final ReadableMap obj,final Promise promise) {
-        final String folder = obj.getString("folder");
-        int messageId = obj.getInt("messageId");
-        int requestKind = obj.getInt("requestKind");
-        final IMAPFetchMessagesOperation messagesOperation = imapSession.fetchMessagesByUIDOperation(folder, requestKind, IndexSet.indexSetWithIndex(messageId));
-
+    fun getMail(obj: ReadableMap, promise: Promise) {
+        val folder = obj.getString("folder")
+        val messageId = obj.getInt("messageId")
+        val requestKind = obj.getInt("requestKind")
+        val messagesOperation = imapSession!!.fetchMessagesByUIDOperation(folder, requestKind, IndexSet.indexSetWithIndex(messageId.toLong()))
         if (obj.hasKey("headers")) {
-            ReadableArray headersArray = obj.getArray("headers");
-            List<String> extraHeaders = new ArrayList<>();
-            for (int i = 0; headersArray.size() > i; i++) {
-                extraHeaders.add(headersArray.getString(i));
+            val headersArray = obj.getArray("headers")
+            val extraHeaders: MutableList<String?> = ArrayList()
+            var i = 0
+            while (headersArray!!.size() > i) {
+                extraHeaders.add(headersArray.getString(i))
+                i++
             }
-            messagesOperation.setExtraHeaders(extraHeaders);
+            messagesOperation.setExtraHeaders(extraHeaders)
         }
-
-        messagesOperation.start(new OperationCallback() {
-            @Override
-            public void succeeded() {
-                List<IMAPMessage> messages = messagesOperation.messages();
+        messagesOperation.start(object : OperationCallback {
+            override fun succeeded() {
+                val messages = messagesOperation.messages()
                 if (messages.isEmpty()) {
-                    promise.reject("Mail not found!");
-                    return;
+                    promise.reject(Exception("Mail not found!"))
+                    return
                 }
-                final IMAPMessage message = messages.get(0);
-                final IMAPFetchParsedContentOperation imapFetchParsedContentOperation = imapSession.fetchParsedMessageByUIDOperation(folder, message.uid());
-                imapFetchParsedContentOperation.start(new OperationCallback() {
-                    @Override
-                    public void succeeded() {
-                        WritableMap mailData = Arguments.createMap();
-                        final Long uid = message.uid();
-                        mailData.putInt("id", uid.intValue());
-                        mailData.putString("date", message.header().date().toString());
-                        WritableMap fromData = Arguments.createMap();
-                        fromData.putString("mailbox", message.header().from().mailbox());
-                        mailData.putInt("flags", message.flags());
-                        fromData.putString("displayName", message.header().from().displayName());
-                        mailData.putMap("from", fromData);
-                        WritableMap toData = Arguments.createMap();
-                        ListIterator<Address> toIterator = message.header().to().listIterator();
-                        while(toIterator.hasNext()){
-                            Address toAddress = toIterator.next();
-                            toData.putString(toAddress.mailbox(), toAddress.displayName());
+                val message = messages[0]
+                val imapFetchParsedContentOperation = imapSession!!.fetchParsedMessageByUIDOperation(folder, message.uid())
+                imapFetchParsedContentOperation.start(object : OperationCallback {
+                    override fun succeeded() {
+                        val mailData = Arguments.createMap()
+                        val uid = message.uid()
+                        mailData.putInt("id", uid.toInt())
+                        mailData.putString("date", message.header().date().toString())
+                        val fromData = Arguments.createMap()
+                        fromData.putString("mailbox", message.header().from().mailbox())
+                        mailData.putInt("flags", message.flags())
+                        fromData.putString("displayName", message.header().from().displayName())
+                        mailData.putMap("from", fromData)
+                        val toData = Arguments.createMap()
+                        val toIterator: ListIterator<Address> = message.header().to().listIterator()
+                        while (toIterator.hasNext()) {
+                            val toAddress = toIterator.next()
+                            toData.putString(toAddress.mailbox(), toAddress.displayName())
                         }
-                        mailData.putMap("to", toData);
-                        if(message.header().cc() != null) {
-                            WritableMap ccData = Arguments.createMap();
-                            ListIterator<Address> ccIterator = message.header().cc().listIterator();
+                        mailData.putMap("to", toData)
+                        if (message.header().cc() != null) {
+                            val ccData = Arguments.createMap()
+                            val ccIterator: ListIterator<Address> = message.header().cc().listIterator()
                             while (ccIterator.hasNext()) {
-                                Address ccAddress = ccIterator.next();
-                                ccData.putString(ccAddress.mailbox(), ccAddress.displayName());
+                                val ccAddress = ccIterator.next()
+                                ccData.putString(ccAddress.mailbox(), ccAddress.displayName())
                             }
-                            mailData.putMap("cc", ccData);
+                            mailData.putMap("cc", ccData)
                         }
-                        if(message.header().bcc() != null) {
-                            WritableMap bccData = Arguments.createMap();
-                            ListIterator<Address> bccIterator = message.header().bcc().listIterator();
+                        if (message.header().bcc() != null) {
+                            val bccData = Arguments.createMap()
+                            val bccIterator: ListIterator<Address> = message.header().bcc().listIterator()
                             while (bccIterator.hasNext()) {
-                                Address bccAddress = bccIterator.next();
-                                bccData.putString(bccAddress.mailbox(), bccAddress.displayName());
+                                val bccAddress = bccIterator.next()
+                                bccData.putString(bccAddress.mailbox(), bccAddress.displayName())
                             }
-                            mailData.putMap("bcc", bccData);
+                            mailData.putMap("bcc", bccData)
                         }
-                        mailData.putString("subject", message.header().subject());
-                        MessageParser parser = imapFetchParsedContentOperation.parser();
-                        mailData.putString("body",parser.htmlBodyRendering());
-                        WritableMap attachmentsData = Arguments.createMap();
-                        List<AbstractPart> attachments = message.attachments();
-                        if (!attachments.isEmpty()) {
-                            for (AbstractPart attachment: message.attachments()) {
-                                IMAPPart part = (IMAPPart) attachment;
-                                WritableMap attachmentData = Arguments.createMap();
-                                attachmentData.putString("filename", attachment.filename());
-
-                                Long size = part.size();
-                                attachmentData.putString("size", size.toString());
-
-                                attachmentData.putInt("encoding", part.encoding());
-                                attachmentData.putString("uniqueId", part.uniqueID());
-
-                                attachmentsData.putMap(part.partID(), attachmentData);
+                        mailData.putString("subject", message.header().subject())
+                        val parser = imapFetchParsedContentOperation.parser()
+                        mailData.putString("body", parser.htmlBodyRendering())
+                        val attachmentsData = Arguments.createMap()
+                        val attachments = message.attachments()
+                        if (attachments.isNotEmpty()) {
+                            for (attachment in message.attachments()) {
+                                val part = attachment as IMAPPart
+                                val attachmentData = Arguments.createMap()
+                                attachmentData.putString("filename", attachment.filename())
+                                val size = part.size()
+                                attachmentData.putString("size", size.toString())
+                                attachmentData.putInt("encoding", part.encoding())
+                                attachmentData.putString("uniqueId", part.uniqueID())
+                                attachmentsData.putMap(part.partID(), attachmentData)
                             }
                         }
-                        mailData.putMap("attachments", attachmentsData);
-
-                        if (!message.htmlInlineAttachments().isEmpty()) {
-                            WritableMap attachmentsDataInline = Arguments.createMap();
-                            List<AbstractPart> attachmentsInline = message.htmlInlineAttachments();
-
-                            for (AbstractPart attachment: attachmentsInline) {
-                                IMAPPart part = (IMAPPart) attachment;
-                                WritableMap attachmentData = Arguments.createMap();
-                                attachmentData.putString("filename", attachment.filename());
-
-                                Long size = part.size();
-                                attachmentData.putString("size", size.toString());
-                                attachmentData.putString("cid", attachment.contentID());
-                                attachmentData.putString("partID", ((IMAPPart) attachment).partID());
-                                attachmentData.putInt("encoding", part.encoding());
-                                attachmentData.putString("uniqueId", part.uniqueID());
-                                attachmentData.putString("mimepart", attachment.mimeType());
-
-                                attachmentsDataInline.putMap(part.partID(), attachmentData);
+                        mailData.putMap("attachments", attachmentsData)
+                        if (message.htmlInlineAttachments().isNotEmpty()) {
+                            val attachmentsDataInline = Arguments.createMap()
+                            val attachmentsInline = message.htmlInlineAttachments()
+                            for (attachment in attachmentsInline) {
+                                val part = attachment as IMAPPart
+                                val attachmentData = Arguments.createMap()
+                                attachmentData.putString("filename", attachment.filename())
+                                val size = part.size()
+                                attachmentData.putString("size", size.toString())
+                                attachmentData.putString("cid", attachment.contentID())
+                                attachmentData.putString("partID", attachment.partID())
+                                attachmentData.putInt("encoding", part.encoding())
+                                attachmentData.putString("uniqueId", part.uniqueID())
+                                attachmentData.putString("mimepart", attachment.mimeType())
+                                attachmentsDataInline.putMap(part.partID(), attachmentData)
                             }
-                            mailData.putMap("inline", attachmentsDataInline);
+                            mailData.putMap("inline", attachmentsDataInline)
                         }
 
                         // Process fetched headers from mail
-            WritableMap headerData = Arguments.createMap();
-            headerData.putString("gmailMessageID", Long.toString(message.gmailMessageID()));
-            headerData.putString("gmailThreadID", Long.toString(message.gmailThreadID()));
-
-            ListIterator<String> headerIterator = message.header().allExtraHeadersNames().listIterator();
-            while (headerIterator.hasNext()) {
-                String headerKey = headerIterator.next();
-                headerData.putString(headerKey, message.header().extraHeaderValueForName(headerKey));
-            }
-                        mailData.putMap("headers", headerData);
-
-                        mailData.putString("status", "success");
-                        promise.resolve(mailData);
+                        val headerData = Arguments.createMap()
+                        headerData.putString("gmailMessageID", message.gmailMessageID().toString())
+                        headerData.putString("gmailThreadID", message.gmailThreadID().toString())
+                        val headerIterator: ListIterator<String> = message.header().allExtraHeadersNames().listIterator()
+                        while (headerIterator.hasNext()) {
+                            val headerKey = headerIterator.next()
+                            headerData.putString(headerKey, message.header().extraHeaderValueForName(headerKey))
+                        }
+                        mailData.putMap("headers", headerData)
+                        mailData.putString("status", "success")
+                        promise.resolve(mailData)
                     }
-                    @Override
-                    public void failed(MailException e) {
-                        promise.reject(String.valueOf(e.errorCode()), e.getMessage());
+
+                    override fun failed(e: MailException) {
+                        promise.reject(e.errorCode().toString(), e.message)
                     }
-                });
+                })
             }
-            @Override
-            public void failed(MailException e) {
-                promise.reject(String.valueOf(e.errorCode()), e.getMessage());
+
+            override fun failed(e: MailException) {
+                promise.reject(e.errorCode().toString(), e.message)
             }
-        });
+        })
     }
 
-    public void createFolderLabel(final ReadableMap obj,final Promise promise) {
-        IMAPOperation imapOperation = this.imapSession.createFolderOperation(obj.getString("folder"));
-        imapOperation.start(new OperationCallback() {
-            @Override
-            public void succeeded() {
-                WritableMap result = Arguments.createMap();
-                result.putString("status", "SUCCESS");
-                promise.resolve(result);
+    fun createFolderLabel(obj: ReadableMap, promise: Promise) {
+        val imapOperation = imapSession!!.createFolderOperation(obj.getString("folder"))
+        imapOperation.start(object : OperationCallback {
+            override fun succeeded() {
+                val result = Arguments.createMap()
+                result.putString("status", "SUCCESS")
+                promise.resolve(result)
             }
-            @Override
-            public void failed(MailException e) {
-                promise.reject(String.valueOf(e.errorCode()), e.getMessage());
+
+            override fun failed(e: MailException) {
+                promise.reject(e.errorCode().toString(), e.message)
             }
-        });
+        })
     }
 
-    public void renameFolderLabel(final ReadableMap obj,final Promise promise) {
-        IMAPOperation imapOperation = this.imapSession.renameFolderOperation(obj.getString("folderOldName"),obj.getString("folderNewName"));
-        imapOperation.start(new OperationCallback() {
-            @Override
-            public void succeeded() {
-                WritableMap result = Arguments.createMap();
-                result.putString("status", "SUCCESS");
-                promise.resolve(result);
+    fun renameFolderLabel(obj: ReadableMap, promise: Promise) {
+        val imapOperation = imapSession!!.renameFolderOperation(obj.getString("folderOldName"), obj.getString("folderNewName"))
+        imapOperation.start(object : OperationCallback {
+            override fun succeeded() {
+                val result = Arguments.createMap()
+                result.putString("status", "SUCCESS")
+                promise.resolve(result)
             }
-            @Override
-            public void failed(MailException e) {
-                promise.reject(String.valueOf(e.errorCode()), e.getMessage());
+
+            override fun failed(e: MailException) {
+                promise.reject(e.errorCode().toString(), e.message)
             }
-        });
+        })
     }
 
-    public void deleteFolderLabel(final ReadableMap obj,final Promise promise) {
-        IMAPOperation imapOperation = this.imapSession.deleteFolderOperation(obj.getString("folder"));
-        imapOperation.start(new OperationCallback() {
-            @Override
-            public void succeeded() {
-                WritableMap result = Arguments.createMap();
-                result.putString("status", "SUCCESS");
-                promise.resolve(result);
+    fun deleteFolderLabel(obj: ReadableMap, promise: Promise) {
+        val imapOperation = imapSession!!.deleteFolderOperation(obj.getString("folder"))
+        imapOperation.start(object : OperationCallback {
+            override fun succeeded() {
+                val result = Arguments.createMap()
+                result.putString("status", "SUCCESS")
+                promise.resolve(result)
             }
-            @Override
-            public void failed(MailException e) {
-                promise.reject(String.valueOf(e.errorCode()), e.getMessage());
+
+            override fun failed(e: MailException) {
+                promise.reject(e.errorCode().toString(), e.message)
             }
-        });
+        })
     }
 
-    public void getFolders(final Promise promise) {
-        final IMAPFetchFoldersOperation foldersOperation = imapSession.fetchAllFoldersOperation();
-        foldersOperation.start(new OperationCallback() {
-            @Override
-            public void succeeded() {
-                List<IMAPFolder> folders = foldersOperation.folders();
-                WritableMap result = Arguments.createMap();
-                WritableArray a = new WritableNativeArray();
-                result.putString("status", "SUCCESS");
-                for (IMAPFolder folder : folders) {
-                    WritableMap mapFolder = Arguments.createMap();
-                    mapFolder.putString("path",folder.path());
-                    mapFolder.putInt("flags", folder.flags());
-                    a.pushMap(mapFolder);
+    fun getFolders(promise: Promise) {
+        val foldersOperation = imapSession!!.fetchAllFoldersOperation()
+        foldersOperation.start(object : OperationCallback {
+            override fun succeeded() {
+                val folders = foldersOperation.folders()
+                val result = Arguments.createMap()
+                val a: WritableArray = WritableNativeArray()
+                result.putString("status", "SUCCESS")
+                for (folder in folders) {
+                    val mapFolder = Arguments.createMap()
+                    mapFolder.putString("path", folder.path())
+                    mapFolder.putInt("flags", folder.flags())
+                    a.pushMap(mapFolder)
                 }
-                result.putArray("folders",a);
-                promise.resolve(result);
+                result.putArray("folders", a)
+                promise.resolve(result)
             }
-            @Override
-            public void failed(MailException e) {
-                promise.reject(String.valueOf(e.errorCode()), e.getMessage());
+
+            override fun failed(e: MailException) {
+                promise.reject(e.errorCode().toString(), e.message)
             }
-        });
+        })
     }
 
-    public void moveEmail(final ReadableMap obj, final Promise promise) {
-        String from = obj.getString("folderFrom");
-        int messageId = obj.getInt("messageId");
-        String to = obj.getString("folderTo");
-        IMAPOperation imapOperation = imapSession.copyMessagesOperation(from,IndexSet.indexSetWithIndex(messageId),to);
-        imapOperation.start(new OperationCallback() {
-            @Override
-            public void succeeded() {
+    fun moveEmail(obj: ReadableMap, promise: Promise) {
+        val from = obj.getString("folderFrom")
+        val messageId = obj.getInt("messageId")
+        val to = obj.getString("folderTo")
+        val imapOperation: IMAPOperation = imapSession!!.copyMessagesOperation(from, IndexSet.indexSetWithIndex(messageId.toLong()), to)
+        imapOperation.start(object : OperationCallback {
+            override fun succeeded() {}
+            override fun failed(e: MailException) {
+                promise.reject(e.errorCode().toString(), e.message)
             }
-            @Override
-            public void failed(MailException e) {
-                promise.reject(String.valueOf(e.errorCode()), e.getMessage());
-            }
-        });
-
-        WritableMap permantDeleteRequest = Arguments.createMap();
-        permantDeleteRequest.putString("folder", from);
-        permantDeleteRequest.putInt("messageId", messageId);
-        permantDelete(permantDeleteRequest,promise);
+        })
+        val permanentDeleteRequest = Arguments.createMap()
+        permanentDeleteRequest.putString("folder", from)
+        permanentDeleteRequest.putInt("messageId", messageId)
+        permanentDelete(permanentDeleteRequest, promise)
     }
 
-    public void permantDelete(final ReadableMap obj, final Promise promise) {
-        String folder = obj.getString("folder");
-        int messageId = obj.getInt("messageId");
-        IMAPOperation imapOperation = imapSession.storeFlagsByUIDOperation(folder,IndexSet.indexSetWithIndex(messageId), 0, MessageFlag.MessageFlagDeleted);
-        imapOperation.start(new OperationCallback() {
-            @Override
-            public void succeeded() {
+    fun permanentDelete(obj: ReadableMap, promise: Promise) {
+        val folder = obj.getString("folder")
+        val messageId = obj.getInt("messageId")
+        var imapOperation = imapSession!!.storeFlagsByUIDOperation(folder, IndexSet.indexSetWithIndex(messageId.toLong()), 0, MessageFlag.MessageFlagDeleted)
+        imapOperation.start(object : OperationCallback {
+            override fun succeeded() {}
+            override fun failed(e: MailException) {
+                promise.reject(e.errorCode().toString(), e.message)
             }
-            @Override
-            public void failed(MailException e) {
-                promise.reject(String.valueOf(e.errorCode()), e.getMessage());
+        })
+        imapOperation = imapSession!!.expungeOperation(folder)
+        imapOperation.start(object : OperationCallback {
+            override fun succeeded() {
+                val result = Arguments.createMap()
+                result.putString("status", "SUCCESS")
+                promise.resolve(result)
             }
-        });
-        imapOperation = imapSession.expungeOperation(folder);
-        imapOperation.start(new OperationCallback() {
-            @Override
-            public void succeeded() {
-                WritableMap result = Arguments.createMap();
-                result.putString("status", "SUCCESS");
-                promise.resolve(result);
+
+            override fun failed(e: MailException) {
+                promise.reject(e.errorCode().toString(), e.message)
             }
-            @Override
-            public void failed(MailException e) {
-                promise.reject(String.valueOf(e.errorCode()), e.getMessage());
-            }
-        });
+        })
     }
 
-    public void ActionLabelMessage(final ReadableMap obj, final Promise promise) {
-        String folder = obj.getString("folder");
-        int messageId = obj.getInt("messageId");
-        int flag = obj.getInt("flagsRequestKind");
-        ReadableArray listTags = obj.getArray("tags");
-        List<String> tags = new ArrayList<String>();
-        for (int i = 0; i < listTags.size(); i++) {
-            tags.add(listTags.getString(i));
+    fun actionLabelMessage(obj: ReadableMap, promise: Promise) {
+        val folder = obj.getString("folder")
+        val messageId = obj.getInt("messageId")
+        val flag = obj.getInt("flagsRequestKind")
+        val listTags = obj.getArray("tags")
+        val tags: MutableList<String?> = ArrayList()
+        for (i in 0 until listTags!!.size()) {
+            tags.add(listTags.getString(i))
         }
-        IMAPOperation imapOperation = imapSession.storeLabelsByUIDOperation(folder, IndexSet.indexSetWithIndex(messageId), flag, tags);
-        imapOperation.start(new OperationCallback() {
-            @Override
-            public void succeeded() {
-                WritableMap result = Arguments.createMap();
-                result.putString("status", "SUCCESS");
-                promise.resolve(result);
+        val imapOperation = imapSession!!.storeLabelsByUIDOperation(folder, IndexSet.indexSetWithIndex(messageId.toLong()), flag, tags)
+        imapOperation.start(object : OperationCallback {
+            override fun succeeded() {
+                val result = Arguments.createMap()
+                result.putString("status", "SUCCESS")
+                promise.resolve(result)
             }
-            @Override
-            public void failed(MailException e) {
-                promise.reject(String.valueOf(e.errorCode()), e.getMessage());
+
+            override fun failed(e: MailException) {
+                promise.reject(e.errorCode().toString(), e.message)
             }
-        });
+        })
     }
 
-    public void ActionFlagMessage(final ReadableMap obj, final Promise promise) {
-        String folder = obj.getString("folder");
-        int messageId = obj.getInt("messageId");
-        int flag = obj.getInt("flagsRequestKind");
-        int messageFlag = obj.getInt("messageFlag");
+    fun actionFlagMessage(obj: ReadableMap, promise: Promise) {
+        val folder = obj.getString("folder")
+        val messageId = obj.getInt("messageId")
+        val flag = obj.getInt("flagsRequestKind")
+        val messageFlag = obj.getInt("messageFlag")
+        val imapOperation = imapSession!!.storeFlagsByUIDOperation(folder, IndexSet.indexSetWithIndex(messageId.toLong()), flag, messageFlag)
+        imapOperation.start(object : OperationCallback {
+            override fun succeeded() {
+                val result = Arguments.createMap()
+                result.putString("status", "SUCCESS")
+                promise.resolve(result)
+            }
 
-        IMAPOperation imapOperation = imapSession.storeFlagsByUIDOperation(folder,IndexSet.indexSetWithIndex(messageId), flag, messageFlag);
-        imapOperation.start(new OperationCallback() {
-            @Override
-            public void succeeded() {
-                WritableMap result = Arguments.createMap();
-                result.putString("status", "SUCCESS");
-                promise.resolve(result);
+            override fun failed(e: MailException) {
+                promise.reject(e.errorCode().toString(), e.message)
             }
-            @Override
-            public void failed(MailException e) {
-                promise.reject(String.valueOf(e.errorCode()), e.getMessage());
-            }
-        });
+        })
     }
 
-    public void getMails(final ReadableMap obj, final Promise promise) {
-        final String folder = obj.getString("folder");
-        final int requestKind = obj.getInt("requestKind");
-        final Long threadId = obj.hasKey("threadId") ? Long.parseLong(obj.getString("threadId")) : null;
-
-
-        if(threadId == null) {
-            IndexSet indexSet = IndexSet.indexSetWithRange(new Range(1, Long.MAX_VALUE));
-            final IMAPFetchMessagesOperation messagesOperation = imapSession.fetchMessagesByUIDOperation(folder, requestKind, indexSet);
-
+    fun getMails(obj: ReadableMap, promise: Promise) {
+        val folder = obj.getString("folder")
+        val requestKind = obj.getInt("requestKind")
+        val threadId = if (obj.hasKey("threadId")) obj.getString("threadId")!!.toLong() else null
+        if (threadId == null) {
+            val indexSet = IndexSet.indexSetWithRange(Range(1, Long.MAX_VALUE))
+            val messagesOperation = imapSession!!.fetchMessagesByUIDOperation(folder, requestKind, indexSet)
             if (obj.hasKey("headers")) {
-                ReadableArray headersArray = obj.getArray("headers");
-                List<String> extraHeaders = new ArrayList<>();
-                for (int i = 0; headersArray.size() > i; i++) {
-                    extraHeaders.add(headersArray.getString(i));
+                val headersArray = obj.getArray("headers")
+                val extraHeaders: MutableList<String?> = ArrayList()
+                var i = 0
+                while (headersArray!!.size() > i) {
+                    extraHeaders.add(headersArray.getString(i))
+                    i++
                 }
-                messagesOperation.setExtraHeaders(extraHeaders);
+                messagesOperation.setExtraHeaders(extraHeaders)
             }
-
-            final WritableMap result = Arguments.createMap();
-            final WritableArray mails = Arguments.createArray();
-            messagesOperation.start(new OperationCallback() {
-                @Override
-                public void succeeded() {
-                    List<IMAPMessage> messages = messagesOperation.messages();
+            val result = Arguments.createMap()
+            val mails = Arguments.createArray()
+            messagesOperation.start(object : OperationCallback {
+                override fun succeeded() {
+                    val messages = messagesOperation.messages()
                     if (messages.isEmpty()) {
-                        promise.reject("Mails not found!");
-                        return;
+                        promise.reject(Exception("Mails not found!"))
+                        return
                     }
-                    for (final IMAPMessage message : messages) {
-                        final WritableMap mailData = Arguments.createMap();
-                        WritableMap headerData = Arguments.createMap();
-                        ListIterator<String> headerIterator = message.header().allExtraHeadersNames().listIterator();
+                    for (message in messages) {
+                        val mailData = Arguments.createMap()
+                        val headerData = Arguments.createMap()
+                        val headerIterator: ListIterator<String> = message.header().allExtraHeadersNames().listIterator()
                         while (headerIterator.hasNext()) {
-                            String headerKey = headerIterator.next();
-                            headerData.putString(headerKey, message.header().extraHeaderValueForName(headerKey));
+                            val headerKey = headerIterator.next()
+                            headerData.putString(headerKey, message.header().extraHeaderValueForName(headerKey))
                         }
-                        mailData.putMap("headers", headerData);
-                        Long mailId = message.uid();
-                        mailData.putInt("id", mailId.intValue());
-                        mailData.putInt("flags", message.flags());
-                        mailData.putString("from", message.header().from().displayName());
-                        mailData.putString("subject", message.header().subject());
-                        mailData.putString("date", message.header().date().toString());
-                        mailData.putInt("attachments", message.attachments().size());
-
-                        mails.pushMap(mailData);
+                        mailData.putMap("headers", headerData)
+                        val mailId = message.uid()
+                        mailData.putInt("id", mailId.toInt())
+                        mailData.putInt("flags", message.flags())
+                        mailData.putString("from", message.header().from().displayName())
+                        mailData.putString("subject", message.header().subject())
+                        mailData.putString("date", message.header().date().toString())
+                        mailData.putInt("attachments", message.attachments().size)
+                        mails.pushMap(mailData)
                     }
-                    result.putString("status", "SUCCESS");
-                    result.putArray("mails", mails);
-                    promise.resolve(result);
+                    result.putString("status", "SUCCESS")
+                    result.putArray("mails", mails)
+                    promise.resolve(result)
                 }
 
-                @Override
-                public void failed(MailException e) {
-                    promise.reject(String.valueOf(e.errorCode()), e.getMessage());
+                override fun failed(e: MailException) {
+                    promise.reject(e.errorCode().toString(), e.message)
                 }
-            });
+            })
         } else {
-
-            final IMAPSearchOperation imapOperation = imapSession.searchOperation(folder,IMAPSearchExpression.searchGmailThreadID(threadId));
-            imapOperation.start(new OperationCallback() {
-                @Override
-                public void succeeded() {
-                    final IMAPFetchMessagesOperation messagesOperation = imapSession.fetchMessagesByUIDOperation(folder, requestKind, imapOperation.uids());
-
+            val imapOperation = imapSession!!.searchOperation(folder, IMAPSearchExpression.searchGmailThreadID(threadId))
+            imapOperation.start(object : OperationCallback {
+                override fun succeeded() {
+                    val messagesOperation = imapSession!!.fetchMessagesByUIDOperation(folder, requestKind, imapOperation.uids())
                     if (obj.hasKey("headers")) {
-                        ReadableArray headersArray = obj.getArray("headers");
-                        List<String> extraHeaders = new ArrayList<>();
-                        for (int i = 0; headersArray.size() > i; i++) {
-                            extraHeaders.add(headersArray.getString(i));
+                        val headersArray = obj.getArray("headers")
+                        val extraHeaders: MutableList<String?> = ArrayList()
+                        var i = 0
+                        while (headersArray!!.size() > i) {
+                            extraHeaders.add(headersArray.getString(i))
+                            i++
                         }
-                        messagesOperation.setExtraHeaders(extraHeaders);
+                        messagesOperation.setExtraHeaders(extraHeaders)
                     }
-
-                    final WritableMap result = Arguments.createMap();
-                    final WritableArray mails = Arguments.createArray();
-                    messagesOperation.start(new OperationCallback() {
-                        @Override
-                        public void succeeded() {
-                            List<IMAPMessage> messages = messagesOperation.messages();
+                    val result = Arguments.createMap()
+                    val mails = Arguments.createArray()
+                    messagesOperation.start(object : OperationCallback {
+                        override fun succeeded() {
+                            val messages = messagesOperation.messages()
                             if (messages.isEmpty()) {
-                                promise.reject("Mails not found!");
-                                return;
+                                promise.reject(Exception("Mails not found!"))
+                                return
                             }
-                            for (final IMAPMessage message : messages) {
-                                final WritableMap mailData = Arguments.createMap();
-                                WritableMap headerData = Arguments.createMap();
-                                ListIterator<String> headerIterator = message.header().allExtraHeadersNames().listIterator();
+                            for (message in messages) {
+                                val mailData = Arguments.createMap()
+                                val headerData = Arguments.createMap()
+                                val headerIterator: ListIterator<String> = message.header().allExtraHeadersNames().listIterator()
                                 while (headerIterator.hasNext()) {
-                                    String headerKey = headerIterator.next();
-                                    headerData.putString(headerKey, message.header().extraHeaderValueForName(headerKey));
+                                    val headerKey = headerIterator.next()
+                                    headerData.putString(headerKey, message.header().extraHeaderValueForName(headerKey))
                                 }
-                                mailData.putMap("headers", headerData);
-                                Long mailId = message.uid();
-                                mailData.putInt("id", mailId.intValue());
-                                mailData.putInt("flags", message.flags());
-                                mailData.putString("from", message.header().from().displayName());
-                                mailData.putString("subject", message.header().subject());
-                                mailData.putString("date", message.header().date().toString());
-                                mailData.putInt("attachments", message.attachments().size());
-
-                                mails.pushMap(mailData);
+                                mailData.putMap("headers", headerData)
+                                val mailId = message.uid()
+                                mailData.putInt("id", mailId.toInt())
+                                mailData.putInt("flags", message.flags())
+                                mailData.putString("from", message.header().from().displayName())
+                                mailData.putString("subject", message.header().subject())
+                                mailData.putString("date", message.header().date().toString())
+                                mailData.putInt("attachments", message.attachments().size)
+                                mails.pushMap(mailData)
                             }
-                            result.putString("status", "SUCCESS");
-                            result.putArray("mails", mails);
-                            promise.resolve(result);
+                            result.putString("status", "SUCCESS")
+                            result.putArray("mails", mails)
+                            promise.resolve(result)
                         }
 
-                        @Override
-                        public void failed(MailException e) {
-                            promise.reject(String.valueOf(e.errorCode()), e.getMessage());
+                        override fun failed(e: MailException) {
+                            promise.reject(e.errorCode().toString(), e.message)
                         }
-                    });
-
+                    })
                 }
-                @Override
-                public void failed(MailException e) {
 
-                }
-            });
+                override fun failed(e: MailException) {}
+            })
         }
     }
 
-
-    public void getMailsThread(final ReadableMap obj, final Promise promise) {
-        final String folder = obj.getString("folder");
-        int requestKind = obj.getInt("requestKind");
-        int lastUId = obj.hasKey("lastUId") ? obj.getInt("lastUId") : 1;
-        IndexSet indexSet = IndexSet.indexSetWithRange(new Range(lastUId,Long.MAX_VALUE));
-        final IMAPFetchMessagesOperation messagesOperation = imapSession.fetchMessagesByUIDOperation(folder, requestKind, indexSet);
-
+    fun getMailsThread(obj: ReadableMap, promise: Promise) {
+        val folder = obj.getString("folder")
+        val requestKind = obj.getInt("requestKind")
+        val lastUId = if (obj.hasKey("lastUId")) obj.getInt("lastUId") else 1
+        val indexSet = IndexSet.indexSetWithRange(Range(lastUId.toLong(), Long.MAX_VALUE))
+        val messagesOperation = imapSession!!.fetchMessagesByUIDOperation(folder, requestKind, indexSet)
         if (obj.hasKey("headers")) {
-            ReadableArray headersArray = obj.getArray("headers");
-            List<String> extraHeaders = new ArrayList<>();
-            for (int i = 0; headersArray.size() > i; i++) {
-                extraHeaders.add(headersArray.getString(i));
+            val headersArray = obj.getArray("headers")
+            val extraHeaders: MutableList<String?> = ArrayList()
+            var i = 0
+            while (headersArray!!.size() > i) {
+                extraHeaders.add(headersArray.getString(i))
+                i++
             }
-            messagesOperation.setExtraHeaders(extraHeaders);
+            messagesOperation.setExtraHeaders(extraHeaders)
         }
-
-        final WritableMap result = Arguments.createMap();
-        final WritableArray mails = Arguments.createArray();
-        final List<String> listThreads = new ArrayList<>();
-        messagesOperation.start(new OperationCallback() {
-            @Override
-            public void succeeded() {
-                List<IMAPMessage> messages = messagesOperation.messages();
-                Collections.reverse(messages);
+        val result = Arguments.createMap()
+        val mails = Arguments.createArray()
+        val listThreads: MutableList<String> = ArrayList()
+        messagesOperation.start(object : OperationCallback {
+            override fun succeeded() {
+                val messages = messagesOperation.messages()
+                messages.reverse()
                 if (messages.isEmpty()) {
-                    promise.reject("Mails not found!");
-                    return;
+                    promise.reject(Exception("Mails not found!"))
+                    return
                 }
-                for (final IMAPMessage message: messages) {
-                    if(!listThreads.contains(message.header().messageID())) {
-                        final WritableMap mailData = Arguments.createMap();
-                        WritableMap headerData = Arguments.createMap();
-                        listThreads.add(message.header().messageID());
-                        if(message.header().references() != null) {
-                            listThreads.addAll(message.header().references());
-                            mailData.putInt("thread",message.header().references().size() + 1);
+                for (message in messages) {
+                    if (!listThreads.contains(message!!.header().messageID())) {
+                        val mailData = Arguments.createMap()
+                        val headerData = Arguments.createMap()
+                        listThreads.add(message.header().messageID())
+                        if (message.header().references() != null) {
+                            listThreads.addAll(message.header().references())
+                            mailData.putInt("thread", message.header().references().size + 1)
                         }
-                        ListIterator<String> headerIterator = message.header().allExtraHeadersNames().listIterator();
-                        headerData.putString("gmailMessageID", Long.toString(message.gmailMessageID()));
-                        headerData.putString("gmailThreadID", Long.toString(message.gmailThreadID()));
+                        val headerIterator: ListIterator<String> = message.header().allExtraHeadersNames().listIterator()
+                        headerData.putString("gmailMessageID", message.gmailMessageID().toString())
+                        headerData.putString("gmailThreadID", message.gmailThreadID().toString())
                         while (headerIterator.hasNext()) {
-                            String headerKey = headerIterator.next();
-                            headerData.putString(headerKey, message.header().extraHeaderValueForName(headerKey));
+                            val headerKey = headerIterator.next()
+                            headerData.putString(headerKey, message.header().extraHeaderValueForName(headerKey))
                         }
-                        mailData.putMap("headers", headerData);
-                        Long mailId = message.uid();
-                        mailData.putInt("id", mailId.intValue());
-                        mailData.putInt("flags", message.flags());
-                        mailData.putString("from", message.header().from().displayName());
-                        mailData.putString("subject", message.header().subject());
-                        mailData.putString("date", message.header().date().toString());
-                        mailData.putInt("attachments", message.attachments().size());
-                        mails.pushMap(mailData);
+                        mailData.putMap("headers", headerData)
+                        val mailId = message.uid()
+                        mailData.putInt("id", mailId.toInt())
+                        mailData.putInt("flags", message.flags())
+                        mailData.putString("from", message.header().from().displayName())
+                        mailData.putString("subject", message.header().subject())
+                        mailData.putString("date", message.header().date().toString())
+                        mailData.putInt("attachments", message.attachments().size)
+                        mails.pushMap(mailData)
                     }
                 }
+                result.putString("status", "SUCCESS")
+                result.putArray("mails", mails)
+                promise.resolve(result)
+            }
 
-                result.putString("status", "SUCCESS");
-                result.putArray("mails", mails);
-                promise.resolve(result);
+            override fun failed(e: MailException) {
+                promise.reject(e.errorCode().toString(), e.message)
             }
-            @Override
-            public void failed(MailException e) {
-                promise.reject(String.valueOf(e.errorCode()), e.getMessage());
-            }
-        });
+        })
     }
 
-    public void getAttachment(final ReadableMap obj, final Promise promise) {
-        final String filename = obj.getString("filename");
-        String folderId = obj.getString("folder");
-        long messageId = (long) obj.getInt("messageId");
-        String partID = obj.getString("partID");
-        int encoding = obj.getInt("encoding");
-        final String folderOutput = obj.getString("folderOutput");
-        final IMAPFetchContentOperation imapOperation = imapSession.fetchMessageAttachmentByUIDOperation(folderId, messageId, partID,encoding,true);
-        imapOperation.start(new OperationCallback() {
-            @Override
-            public void succeeded() {
-                File file = new File(folderOutput, filename);
+    fun getAttachment(obj: ReadableMap, promise: Promise) {
+        val filename = obj.getString("filename")
+        val folderId = obj.getString("folder")
+        val messageId = obj.getInt("messageId").toLong()
+        val partID = obj.getString("partID")
+        val encoding = obj.getInt("encoding")
+        val folderOutput = obj.getString("folderOutput")
+        val imapOperation = imapSession!!.fetchMessageAttachmentByUIDOperation(folderId, messageId, partID, encoding, true)
+        imapOperation.start(object : OperationCallback {
+            override fun succeeded() {
+                val file = File(folderOutput, filename)
                 try {
-                    FileOutputStream outputStream;
-                    outputStream = new FileOutputStream(file);
-                    outputStream.write(imapOperation.data());
-                    outputStream.close();
-                    if(file.canWrite()) {
-                        WritableMap result = Arguments.createMap();
-                        result.putString("status", "SUCCESS");
-                        promise.resolve(result);
+                    val outputStream = FileOutputStream(file)
+                    outputStream.write(imapOperation.data())
+                    outputStream.close()
+                    if (file.canWrite()) {
+                        val result = Arguments.createMap()
+                        result.putString("status", "SUCCESS")
+                        promise.resolve(result)
                     }
-                } catch (FileNotFoundException e) {
-                    promise.reject(e.getMessage());
-                } catch (IOException e) {
-                    promise.reject(e.getMessage());
-                } catch (Exception e) {
-                    promise.reject(e.getMessage());
+                } catch (e: FileNotFoundException) {
+                    promise.reject(Exception(e.message))
+                } catch (e: IOException) {
+                    promise.reject(Exception(e.message))
+                } catch (e: Exception) {
+                    promise.reject(Exception(e.message))
                 }
             }
-            @Override
-            public void failed(MailException e) {
-                promise.reject(String.valueOf(e.errorCode()), e.getMessage());
+
+            override fun failed(e: MailException) {
+                promise.reject(e.errorCode().toString(), e.message)
             }
-        });
+        })
     }
 
-    public void getAttachmentInline(final ReadableMap obj, final Promise promise) {
-        final String filename = obj.getString("filename");
-        String folderId = obj.getString("folder");
-        long messageId = (long) obj.getInt("messageId");
-        String partID = obj.getString("partID");
-        int encoding = obj.getInt("encoding");
-        final String mimepart = obj.getString("mimepart");
+    fun getAttachmentInline(obj: ReadableMap, promise: Promise) {
+        val folderId = obj.getString("folder")
+        val messageId = obj.getInt("messageId").toLong()
+        val partID = obj.getString("partID")
+        val encoding = obj.getInt("encoding")
+        val mimepart = obj.getString("mimepart")
+        val imapOperation = imapSession!!.fetchMessageAttachmentByUIDOperation(folderId, messageId, partID, encoding, true)
+        imapOperation.start(object : OperationCallback {
+            override fun succeeded() {
+                val result = Arguments.createMap()
+                val data = "data:" + mimepart + ";base64, " + Base64.encodeToString(imapOperation.data(), Base64.DEFAULT)
+                result.putString("data", data)
+                promise.resolve(result)
+            }
 
-        final IMAPFetchContentOperation imapOperation = imapSession.fetchMessageAttachmentByUIDOperation(folderId, messageId, partID,encoding,true);
-        imapOperation.start(new OperationCallback() {
-            @Override
-            public void succeeded() {
-                WritableMap result = Arguments.createMap();
-                String data = "data:" + mimepart + ";base64, " + Base64.encodeToString(imapOperation.data(), Base64.DEFAULT);
-                result.putString("data", data);
-                promise.resolve(result);
+            override fun failed(e: MailException) {
+                promise.reject(e.errorCode().toString(), e.message)
             }
-            @Override
-            public void failed(MailException e) {
-                promise.reject(String.valueOf(e.errorCode()), e.getMessage());
-            }
-        });
+        })
     }
 
-    public void statusFolder(final ReadableMap obj, final Promise promise) {
-        String folder = obj.getString("folder");
-
-        final IMAPFolderStatusOperation folderStatusOperation = imapSession.folderStatusOperation(folder);
-        folderStatusOperation.start(new OperationCallback() {
-            @Override
-            public void succeeded() {
-                WritableMap result = Arguments.createMap();
-                result.putString("status", "SUCCESS");
-                result.putInt("unseenCount", (int)folderStatusOperation.status().unseenCount());
-                result.putInt("messageCount", (int)folderStatusOperation.status().messageCount());
-                result.putInt("recentCount", (int)folderStatusOperation.status().recentCount());
-                promise.resolve(result);
+    fun statusFolder(obj: ReadableMap, promise: Promise) {
+        val folder = obj.getString("folder")
+        val folderStatusOperation = imapSession!!.folderStatusOperation(folder)
+        folderStatusOperation.start(object : OperationCallback {
+            override fun succeeded() {
+                val result = Arguments.createMap()
+                result.putString("status", "SUCCESS")
+                result.putInt("unseenCount", folderStatusOperation.status().unseenCount().toInt())
+                result.putInt("messageCount", folderStatusOperation.status().messageCount().toInt())
+                result.putInt("recentCount", folderStatusOperation.status().recentCount().toInt())
+                promise.resolve(result)
             }
 
-            @Override
-            public void failed(MailException e) {
-                promise.reject(String.valueOf(e.errorCode()), e.getMessage());
+            override fun failed(e: MailException) {
+                promise.reject(e.errorCode().toString(), e.message)
             }
-        });
-
+        })
     }
 
-    public void getMailsByRange(final ReadableMap obj, final Promise promise) {
+    fun getMailsByRange(obj: ReadableMap, promise: Promise) {
         // Get arguments
-        final String folder = obj.getString("folder");
-        final int requestKind = obj.getInt("requestKind");
-        final int from = obj.getInt("from");
-        final int length = obj.getInt("length");
+        val folder = obj.getString("folder")
+        val requestKind = obj.getInt("requestKind")
+        val from = obj.getInt("from")
+        val length = obj.getInt("length")
 
         // Build operation
-        IndexSet indexSet = IndexSet.indexSetWithRange(new Range(from, length));
-        final IMAPFetchMessagesOperation messagesOperation = imapSession.fetchMessagesByNumberOperation(folder, requestKind, indexSet);
-
+        val indexSet = IndexSet.indexSetWithRange(Range(from.toLong(), length.toLong()))
+        val messagesOperation = imapSession!!.fetchMessagesByNumberOperation(folder, requestKind, indexSet)
         if (obj.hasKey("headers")) {
-            ReadableArray headersArray = obj.getArray("headers");
-            List<String> extraHeaders = new ArrayList<>();
-            for (int i = 0; headersArray.size() > i; i++) {
-                extraHeaders.add(headersArray.getString(i));
+            val headersArray = obj.getArray("headers")
+            val extraHeaders: MutableList<String?> = ArrayList()
+            var i = 0
+            while (headersArray!!.size() > i) {
+                extraHeaders.add(headersArray.getString(i))
+                i++
             }
-            messagesOperation.setExtraHeaders(extraHeaders);
+            messagesOperation.setExtraHeaders(extraHeaders)
         }
 
         // Start operation
-        messagesOperation.start(new OperationCallback() {
-            @Override
-            public void succeeded() {
-                parseMessages(messagesOperation.messages(), promise);
+        messagesOperation.start(object : OperationCallback {
+            override fun succeeded() {
+                parseMessages(messagesOperation.messages(), promise)
             }
 
-            @Override
-            public void failed(MailException e) {
-                promise.reject(String.valueOf(e.errorCode()), e.getMessage());
+            override fun failed(e: MailException) {
+                promise.reject(e.errorCode().toString(), e.message)
             }
-        });
+        })
     }
 
-    public void getMailsByThread(final ReadableMap obj, final Promise promise) {
+    fun getMailsByThread(obj: ReadableMap, promise: Promise) {
         // Get arguments
-        final String folder = obj.getString("folder");
-        final int requestKind = obj.getInt("requestKind");
-        final Long threadId = Long.parseLong(obj.getString("threadId"));
+        val folder = obj.getString("folder")
+        val requestKind = obj.getInt("requestKind")
+        val threadId = obj.getString("threadId")!!.toLong()
 
         // Build operation
-        final IMAPSearchOperation searchOperation = imapSession.searchOperation(
-                folder, IMAPSearchExpression.searchGmailThreadID(threadId));
+        val searchOperation = imapSession!!.searchOperation(
+                folder, IMAPSearchExpression.searchGmailThreadID(threadId))
 
         // Start searchOperation
-        searchOperation.start(new OperationCallback() {
-            @Override
-            public void succeeded() {
+        searchOperation.start(object : OperationCallback {
+            override fun succeeded() {
                 // Build operation
-                final IMAPFetchMessagesOperation messagesOperation = imapSession
-                        .fetchMessagesByUIDOperation(folder, requestKind, searchOperation.uids());
-
+                val messagesOperation = imapSession!!
+                        .fetchMessagesByUIDOperation(folder, requestKind, searchOperation.uids())
                 if (obj.hasKey("headers")) {
-                    ReadableArray headersArray = obj.getArray("headers");
-                    List<String> extraHeaders = new ArrayList<>();
-                    for (int i = 0; headersArray.size() > i; i++) {
-                        extraHeaders.add(headersArray.getString(i));
+                    val headersArray = obj.getArray("headers")
+                    val extraHeaders: MutableList<String?> = ArrayList()
+                    var i = 0
+                    while (headersArray!!.size() > i) {
+                        extraHeaders.add(headersArray.getString(i))
+                        i++
                     }
-                    messagesOperation.setExtraHeaders(extraHeaders);
+                    messagesOperation.setExtraHeaders(extraHeaders)
                 }
 
                 // Start messagesOperation
-                messagesOperation.start(new OperationCallback() {
-                    @Override
-                    public void succeeded() {
-                        parseMessages(messagesOperation.messages(), promise);
+                messagesOperation.start(object : OperationCallback {
+                    override fun succeeded() {
+                        parseMessages(messagesOperation.messages(), promise)
                     }
 
-                    @Override
-                    public void failed(MailException e) {
-                        promise.reject(String.valueOf(e.errorCode()), e.getMessage());
+                    override fun failed(e: MailException) {
+                        promise.reject(e.errorCode().toString(), e.message)
                     }
-                });
+                })
+            }
 
+            override fun failed(e: MailException) {
+                promise.reject(e.errorCode().toString(), e.message)
             }
-            @Override
-            public void failed(MailException e) {
-                promise.reject(String.valueOf(e.errorCode()), e.getMessage());
-            }
-        });
+        })
     }
 
-    private void parseMessages(List<IMAPMessage> messages, Promise promise) {
-        final WritableMap result = Arguments.createMap();
-        final WritableArray mails = Arguments.createArray();
-
-        if (messages == null){
-            result.putString("status", "SUCCESS");
-            result.putArray("mails", mails);
-            promise.resolve(result);
+    private fun parseMessages(messages: List<IMAPMessage>?, promise: Promise) {
+        val result = Arguments.createMap()
+        val mails = Arguments.createArray()
+        if (messages == null) {
+            result.putString("status", "SUCCESS")
+            result.putArray("mails", mails)
+            promise.resolve(result)
         }
-
-        for (final IMAPMessage message : messages) {
+        for (message in messages!!) {
 
             // Process fetched headers from mail
-            WritableMap headerData = Arguments.createMap();
-            headerData.putString("gmailMessageID", Long.toString(message.gmailMessageID()));
-            headerData.putString("gmailThreadID", Long.toString(message.gmailThreadID()));
-
-            ListIterator<String> headerIterator = message.header().allExtraHeadersNames().listIterator();
+            val headerData = Arguments.createMap()
+            headerData.putString("gmailMessageID", message.gmailMessageID().toString())
+            headerData.putString("gmailThreadID", message.gmailThreadID().toString())
+            val headerIterator: ListIterator<String> = message.header().allExtraHeadersNames().listIterator()
             while (headerIterator.hasNext()) {
-                String headerKey = headerIterator.next();
-                headerData.putString(headerKey, message.header().extraHeaderValueForName(headerKey));
+                val headerKey = headerIterator.next()
+                headerData.putString(headerKey, message.header().extraHeaderValueForName(headerKey))
             }
 
             // Process fetched data from mail
-            final WritableMap mailData = Arguments.createMap();
-            mailData.putMap("headers", headerData);
-            mailData.putInt("id", ((Long) message.uid()).intValue());
-            mailData.putInt("flags", message.flags());
-            mailData.putString("from", message.header().from().displayName());
-            mailData.putString("subject", message.header().subject());
-            mailData.putString("date", message.header().date().toString());
-            mailData.putInt("attachments", message.attachments().size());
-
-            mails.pushMap(mailData);
+            val mailData = Arguments.createMap()
+            mailData.putMap("headers", headerData)
+            mailData.putInt("id", message.uid().toInt())
+            mailData.putInt("flags", message.flags())
+            mailData.putString("from", message.header().from().displayName())
+            mailData.putString("subject", message.header().subject())
+            mailData.putString("date", message.header().date().toString())
+            mailData.putInt("attachments", message.attachments().size)
+            mails.pushMap(mailData)
         }
-        result.putString("status", "SUCCESS");
-        result.putArray("mails", mails);
-        promise.resolve(result);
+        result.putString("status", "SUCCESS")
+        result.putArray("mails", mails)
+        promise.resolve(result)
     }
-
 }

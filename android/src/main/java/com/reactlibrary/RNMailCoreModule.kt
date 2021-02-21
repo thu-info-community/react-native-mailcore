@@ -54,22 +54,22 @@ class RNMailCoreModule(reactContext: ReactApplicationContext) : ReactContextBase
 
     @ReactMethod
     fun permanentDeleteEmail(obj: ReadableMap, promise: Promise) {
-        safeWrapper(promise) { mailClient.permantDelete(obj, promise) }
+        safeWrapper(promise) { mailClient.permanentDelete(obj, promise) }
     }
 
     @ReactMethod
     fun actionFlagMessage(obj: ReadableMap, promise: Promise) {
-        safeWrapper(promise) { mailClient.ActionFlagMessage(obj, promise) }
+        safeWrapper(promise) { mailClient.actionFlagMessage(obj, promise) }
     }
 
     @ReactMethod
     fun actionLabelMessage(obj: ReadableMap, promise: Promise) {
-        safeWrapper(promise) { mailClient.ActionLabelMessage(obj, promise) }
+        safeWrapper(promise) { mailClient.actionLabelMessage(obj, promise) }
     }
 
     @ReactMethod
     fun sendMail(obj: ReadableMap, promise: Promise) {
-        safeWrapper(promise) { mailClient.sendMail(obj, promise, currentActivity) }
+        safeWrapper(promise) { mailClient.sendMail(obj, promise, currentActivity!!) }
     }
 
     @ReactMethod
