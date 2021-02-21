@@ -1,114 +1,115 @@
 package com.reactlibrary
 
-import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.bridge.ReactContextBaseJavaModule
-import com.reactlibrary.MailClient
-import com.facebook.react.bridge.ReactMethod
-import com.facebook.react.bridge.ReadableMap
-import com.facebook.react.bridge.Promise
+import com.facebook.react.bridge.*
 
 class RNMailCoreModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
     private val mailClient = MailClient()
 
     override fun getName() = "RNMailCore"
 
+    private fun safeWrapper(promise: Promise, action: () -> Unit) {
+        currentActivity?.runOnUiThread {
+            try {
+                action()
+            } catch (e: Exception) {
+                promise.reject(e)
+            }
+        } ?: promise.reject(Exception("Current activity is null!"))
+    }
+
     @ReactMethod
     fun loginImap(obj: ReadableMap, promise: Promise) {
-        currentActivity!!.runOnUiThread {
-            mailClient.initIMAPSession(UserCredential(obj), promise)
-        }
+        safeWrapper(promise) { mailClient.initIMAPSession(UserCredential(obj), promise) }
     }
 
     @ReactMethod
     fun loginSmtp(obj: ReadableMap, promise: Promise) {
-        currentActivity!!.runOnUiThread {
-            mailClient.initSMTPSession(UserCredential(obj), promise)
-        }
+        safeWrapper(promise) { mailClient.initSMTPSession(UserCredential(obj), promise) }
     }
 
     @ReactMethod
     fun createFolder(obj: ReadableMap, promise: Promise) {
-        currentActivity!!.runOnUiThread { mailClient.createFolderLabel(obj, promise) }
+        safeWrapper(promise) { mailClient.createFolderLabel(obj, promise) }
     }
 
     @ReactMethod
     fun renameFolder(obj: ReadableMap, promise: Promise) {
-        currentActivity!!.runOnUiThread { mailClient.renameFolderLabel(obj, promise) }
+        safeWrapper(promise) { mailClient.renameFolderLabel(obj, promise) }
     }
 
     @ReactMethod
     fun deleteFolder(obj: ReadableMap, promise: Promise) {
-        currentActivity!!.runOnUiThread { mailClient.deleteFolderLabel(obj, promise) }
+        safeWrapper(promise) { mailClient.deleteFolderLabel(obj, promise) }
     }
 
     @ReactMethod
-    fun getFolders(promise: Promise?) {
-        currentActivity!!.runOnUiThread { mailClient.getFolders(promise) }
+    fun getFolders(promise: Promise) {
+        safeWrapper(promise) { mailClient.getFolders(promise) }
     }
 
     @ReactMethod
     fun moveEmail(obj: ReadableMap, promise: Promise) {
-        currentActivity!!.runOnUiThread { mailClient.moveEmail(obj, promise) }
+        safeWrapper(promise) { mailClient.moveEmail(obj, promise) }
     }
 
     @ReactMethod
-    fun permantDeleteEmail(obj: ReadableMap, promise: Promise) {
-        currentActivity!!.runOnUiThread { mailClient.permantDelete(obj, promise) }
+    fun permanentDeleteEmail(obj: ReadableMap, promise: Promise) {
+        safeWrapper(promise) { mailClient.permantDelete(obj, promise) }
     }
 
     @ReactMethod
     fun actionFlagMessage(obj: ReadableMap, promise: Promise) {
-        currentActivity!!.runOnUiThread { mailClient.ActionFlagMessage(obj, promise) }
+        safeWrapper(promise) { mailClient.ActionFlagMessage(obj, promise) }
     }
 
     @ReactMethod
     fun actionLabelMessage(obj: ReadableMap, promise: Promise) {
-        currentActivity!!.runOnUiThread { mailClient.ActionLabelMessage(obj, promise) }
+        safeWrapper(promise) { mailClient.ActionLabelMessage(obj, promise) }
     }
 
     @ReactMethod
     fun sendMail(obj: ReadableMap, promise: Promise) {
-        currentActivity!!.runOnUiThread { mailClient.sendMail(obj, promise, currentActivity) }
+        safeWrapper(promise) { mailClient.sendMail(obj, promise, currentActivity) }
     }
 
     @ReactMethod
     fun getMail(obj: ReadableMap, promise: Promise) {
-        currentActivity!!.runOnUiThread { mailClient.getMail(obj, promise) }
+        safeWrapper(promise) { mailClient.getMail(obj, promise) }
     }
 
     @ReactMethod
     fun getAttachment(obj: ReadableMap, promise: Promise) {
-        currentActivity!!.runOnUiThread { mailClient.getAttachment(obj, promise) }
+        safeWrapper(promise) { mailClient.getAttachment(obj, promise) }
     }
 
     @ReactMethod
     fun getAttachmentInline(obj: ReadableMap, promise: Promise) {
-        currentActivity!!.runOnUiThread { mailClient.getAttachmentInline(obj, promise) }
+        safeWrapper(promise) { mailClient.getAttachmentInline(obj, promise) }
     }
 
     @ReactMethod
     fun getMails(obj: ReadableMap, promise: Promise) {
-        currentActivity!!.runOnUiThread { mailClient.getMails(obj, promise) }
+        safeWrapper(promise) { mailClient.getMails(obj, promise) }
     }
 
     @ReactMethod
     fun getMailsThread(obj: ReadableMap, promise: Promise) {
-        currentActivity!!.runOnUiThread { mailClient.getMailsThread(obj, promise) }
+        safeWrapper(promise) { mailClient.getMailsThread(obj, promise) }
     }
 
     @ReactMethod
     fun statusFolder(obj: ReadableMap, promise: Promise) {
-        currentActivity!!.runOnUiThread { mailClient.statusFolder(obj, promise) }
+        safeWrapper(promise) { mailClient.statusFolder(obj, promise) }
     }
 
     @ReactMethod
     fun getMailsByRange(obj: ReadableMap, promise: Promise) {
-        currentActivity!!.runOnUiThread { mailClient.getMailsByRange(obj, promise) }
+        safeWrapper(promise) { mailClient.getMailsByRange(obj, promise) }
     }
 
     @ReactMethod
     fun getMailsByThread(obj: ReadableMap, promise: Promise) {
-        currentActivity!!.runOnUiThread { mailClient.getMailsByThread(obj, promise) }
+        safeWrapper(promise) { mailClient.getMailsByThread(obj, promise) }
     }
 
 }
