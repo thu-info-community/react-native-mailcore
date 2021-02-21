@@ -32,14 +32,6 @@ android {
 }
 
 repositories {
-    maven {
-        // TODO: this should be fixed in release
-        url "$rootDir/../THUInfo/node_modules/react-native/android"
-    }
-    maven {
-        // TODO: this should be fixed in release
-        url "$rootDir/../THUInfo/node_modules/jsc-android/dist"
-    }
     google()
     jcenter()
     maven { url 'https://www.jitpack.io' }
