@@ -13,13 +13,6 @@ import javax.mail.internet.MimeUtility
 class IMAPClient : AbstractMailClient() {
     private lateinit var imapStore: IMAPStore
 
-    private fun Promise.callback(addon: (WritableMap) -> Unit = {}) {
-        val result = Arguments.createMap()
-        result.putString("status", "SUCCESS")
-        addon(result)
-        resolve(result)
-    }
-
     override fun init(userCredential: UserCredential, promise: Promise) {
         if (!::imapStore.isInitialized) {
             safeThread(promise) {

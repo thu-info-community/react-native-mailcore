@@ -7,6 +7,8 @@ class RNMailCoreModule(reactContext: ReactApplicationContext) : ReactContextBase
 
     private val imapClient = IMAPClient()
 
+    private val smtpClient = SMTPClient()
+
     override fun getName() = "RNMailCore"
 
     private fun safeWrapper(promise: Promise, action: () -> Unit) {
@@ -26,7 +28,7 @@ class RNMailCoreModule(reactContext: ReactApplicationContext) : ReactContextBase
 
     @ReactMethod
     fun loginSmtp(obj: ReadableMap, promise: Promise) {
-        safeWrapper(promise) { mailClient.initSMTPSession(UserCredential(obj), promise) }
+        safeWrapper(promise) { smtpClient.init(UserCredential(obj), promise) } // This is almost a no-op
     }
 
     @ReactMethod
@@ -71,7 +73,7 @@ class RNMailCoreModule(reactContext: ReactApplicationContext) : ReactContextBase
 
     @ReactMethod
     fun sendMail(obj: ReadableMap, promise: Promise) {
-        safeWrapper(promise) { mailClient.sendMail(obj, promise, currentActivity!!) }
+        safeWrapper(promise) { smtpClient.sendMail(obj, promise) }
     }
 
     @ReactMethod
