@@ -5,6 +5,8 @@ import com.facebook.react.bridge.*
 class RNMailCoreModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
     private val mailClient = MailClient()
 
+    private val imapClient = IMAPClient()
+
     override fun getName() = "RNMailCore"
 
     private fun safeWrapper(promise: Promise, action: () -> Unit) {
@@ -19,7 +21,7 @@ class RNMailCoreModule(reactContext: ReactApplicationContext) : ReactContextBase
 
     @ReactMethod
     fun loginImap(obj: ReadableMap, promise: Promise) {
-        safeWrapper(promise) { mailClient.initIMAPSession(UserCredential(obj), promise) }
+        safeWrapper(promise) { imapClient.init(UserCredential(obj), promise) }
     }
 
     @ReactMethod
@@ -44,7 +46,7 @@ class RNMailCoreModule(reactContext: ReactApplicationContext) : ReactContextBase
 
     @ReactMethod
     fun getFolders(promise: Promise) {
-        safeWrapper(promise) { mailClient.getFolders(promise) }
+        safeWrapper(promise) { imapClient.getFolders(promise) }
     }
 
     @ReactMethod
@@ -74,7 +76,7 @@ class RNMailCoreModule(reactContext: ReactApplicationContext) : ReactContextBase
 
     @ReactMethod
     fun getMail(obj: ReadableMap, promise: Promise) {
-        safeWrapper(promise) { mailClient.getMail(obj, promise) }
+        safeWrapper(promise) { imapClient.getMail(obj, promise) }
     }
 
     @ReactMethod
@@ -89,7 +91,7 @@ class RNMailCoreModule(reactContext: ReactApplicationContext) : ReactContextBase
 
     @ReactMethod
     fun getMails(obj: ReadableMap, promise: Promise) {
-        safeWrapper(promise) { mailClient.getMails(obj, promise) }
+        safeWrapper(promise) { imapClient.getMails(obj, promise) }
     }
 
     @ReactMethod
