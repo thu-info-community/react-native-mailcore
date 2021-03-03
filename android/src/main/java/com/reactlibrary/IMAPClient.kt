@@ -14,18 +14,14 @@ class IMAPClient : AbstractMailClient() {
     private lateinit var imapStore: IMAPStore
 
     override fun init(userCredential: UserCredential, promise: Promise) {
-        if (!::imapStore.isInitialized) {
-            safeThread(promise) {
-                imapStore = (Session.getInstance(Properties().apply {
-                    put("mail.store.protocol", "imap")
-                    put("mail.imap.host", userCredential.hostname)
-                }).getStore("imap") as IMAPStore).apply {
-                    connect(userCredential.username, userCredential.password)
-                }
-                promise.callback()
+        safeThread(promise) {
+            imapStore = (Session.getInstance(Properties().apply {
+                put("mail.store.protocol", "imap")
+                put("mail.imap.host", userCredential.hostname)
+            }).getStore("imap") as IMAPStore).apply {
+                connect(userCredential.username, userCredential.password)
             }
-        } else {
-            promise.reject(Exception("IMAP client already initialized!"))
+            promise.callback()
         }
     }
 
@@ -76,7 +72,7 @@ class IMAPClient : AbstractMailClient() {
                 message as MimeMessage
 
                 fun getAddress(type: Message.RecipientType) =
-                        message.getRecipients(type)?.map { EmailAddress(it as InternetAddress) } ?: listOf()
+                    message.getRecipients(type)?.map { EmailAddress(it as InternetAddress) } ?: listOf()
 
                 if (message.messageID == messageId) {
                     found = true
@@ -110,13 +106,13 @@ class IMAPClient : AbstractMailClient() {
                         val emailContent = EmailContent()
 
                         fun getCid(part: Part) =
-                                with(part.getHeader("Content-Id")[0]) {
-                                    if (matches(Regex("<.*>"))) {
-                                        substring(indexOf('<') + 1, lastIndexOf('>'))
-                                    } else {
-                                        this
-                                    }
+                            with(part.getHeader("Content-Id")[0]) {
+                                if (matches(Regex("<.*>"))) {
+                                    substring(indexOf('<') + 1, lastIndexOf('>'))
+                                } else {
+                                    this
                                 }
+                            }
 
                         fun parsePart(part: Part) {
                             when {

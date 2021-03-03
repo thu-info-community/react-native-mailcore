@@ -15,6 +15,7 @@ class SMTPClient : AbstractMailClient() {
 
     override fun init(userCredential: UserCredential, promise: Promise) {
         credential = userCredential
+        promise.callback()
     }
 
     fun sendMail(obj: ReadableMap, promise: Promise) {
