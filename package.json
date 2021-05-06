@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "React Native bindings for https://github.com/MailCore/mailcore2, based on react-native-mailcore, customized for thu info",
   "main": "index.js",
+  "types": "index.d.ts",
   "directories": {
     "example": "examples"
   },
