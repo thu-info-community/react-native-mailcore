@@ -129,7 +129,7 @@ class IMAPClient : AbstractMailClient() {
                                 part.isMimeType("multipart/*") ->
                                     (part.content as Multipart).run { (0 until count).forEach { parsePart(getBodyPart(it)) } }
                                 else ->
-                                    Log.e("UNEXPECTED TYPE ", part.contentType)
+                                    Log.e("err", "UNEXPECTED TYPE " + part.contentType)
                             }
                         }
 
