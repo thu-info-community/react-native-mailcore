@@ -5,6 +5,10 @@ react native bindings for https://github.com/MailCore/mailcore2
 [![npm version](https://img.shields.io/npm/v/react-native-mailcore.svg?style=flat-square)](https://www.npmjs.com/package/agenthunt/react-native-mailcore)
 [![npm downloads](https://img.shields.io/npm/dm/react-native-mailcore.svg?style=flat-square)](https://www.npmjs.com/package/react-native-mailcore)
 
+> WARNING: For projects targeting API 30 and above, exclude `'META-INF/NOTICE.md'` and `'META-INF/LICENSE.md'` in your `app/build.gradle`
+> 
+> For more information, see https://issuetracker.google.com/issues/172544275
+
 ## Stability status: alpha
 
 ## Setup
