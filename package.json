@@ -4,16 +4,12 @@
   "description": "React Native bindings for https://github.com/MailCore/mailcore2, based on react-native-mailcore, customized for thu info",
   "main": "index.js",
   "types": "index.d.ts",
-  "directories": {
-    "example": "examples"
-  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "semantic-release": "semantic-release"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/agenthunt/react-native-mailcore.git"
+    "url": "https://github.com/thu-info-community/thu-info-mailcore.git"
   },
   "keywords": [
     "react-native",
@@ -24,17 +20,8 @@
   "author": "Shailesh",
   "license": "ISC",
   "peerDependencies": {
-    "react-native": ">=0.47"
+    "react-native": ">=0.61"
   },
-  "rnpm": {
-    "android": {
-      "sourceDir": "./android"
-    }
-  },
-  "bugs": {
-    "url": "https://github.com/agenthunt/react-native-mailcore/issues"
-  },
-  "homepage": "https://github.com/agenthunt/react-native-mailcore#readme",
   "devDependencies": {
     "semantic-release": "^17.1.1"
   }
