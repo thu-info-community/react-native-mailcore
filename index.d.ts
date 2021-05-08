@@ -96,6 +96,18 @@ export function getMails({
     requestKind: number;
 }): Response<{mails: Mail[]}>;
 
+export function getMailsByRange({
+    folder,
+    requestKind,
+    from,
+    length,
+}: {
+    folder: string;
+    requestKind: number;
+    from: number;
+    length: number;
+}): Response<{mails: Mail[]}>;
+
 export function getMail({
     folder,
     messageId,

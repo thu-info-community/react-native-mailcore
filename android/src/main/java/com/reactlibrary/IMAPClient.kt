@@ -25,6 +25,17 @@ class IMAPClient : AbstractMailClient() {
         }
     }
 
+    private fun makeMailData(message: MimeMessage) = Arguments.createMap().apply {
+        putMap("headers", Arguments.createMap())
+        putString("id", message.messageID)
+        // putInt("flags", it.flags.systemFlags.sumBy { flag->flag. })
+        putInt("flags", 0)
+        putString("from", EmailAddress(message.from[0] as InternetAddress).toString())
+        putString("subject", message.subject ?: "[无主题]")
+        putString("date", message.sentDate.toString())
+        putInt("attachments", 0)
+    }
+
     fun createFolder(obj: ReadableMap, promise: Promise) {
         safeThread(promise) {
             imapStore.defaultFolder.getFolder(obj.getString("folder")).create(Folder.HOLDS_MESSAGES)
@@ -100,24 +111,29 @@ class IMAPClient : AbstractMailClient() {
                 val folder = imapStore.getFolder(obj.getString("folder")) as IMAPFolder
                 folder.open(Folder.READ_WRITE)
                 val mails = Arguments.createArray()
-                for (message in folder.messages.reversed()) {
-                    message as MimeMessage
-                    val mailData = Arguments.createMap()
-                    mailData.putMap("headers", Arguments.createMap())
-                    mailData.putString("id", message.messageID)
-                    // mailData.putInt("flags", it.flags.systemFlags.sumBy { flag->flag. })
-                    mailData.putInt("flags", 0)
-                    mailData.putString("from", EmailAddress(message.from[0] as InternetAddress).toString())
-                    mailData.putString("subject", message.subject ?: "[无主题]")
-                    mailData.putString("date", message.sentDate.toString())
-                    mailData.putInt("attachments", 0)
-                    mails.pushMap(mailData)
+                for (message in folder.messages) {
+                    mails.pushMap(makeMailData(message as MimeMessage))
                 }
                 it.putArray("mails", mails)
             }
         }
     }
 
+    fun getMailsByRange(obj: ReadableMap, promise: Promise) {
+        safeThread(promise) {
+            promise.callback {
+                val folder = imapStore.getFolder(obj.getString("folder")) as IMAPFolder
+                folder.open(Folder.READ_WRITE)
+                val from = obj.getInt("from")
+                val length = obj.getInt("length")
+                val mails = Arguments.createArray()
+                for (message in folder.getMessages(from, from + length - 1)) {
+                    mails.pushMap(makeMailData(message as MimeMessage))
+                }
+                it.putArray("mails", mails)
+            }
+        }
+    }
 
     fun getMail(obj: ReadableMap, promise: Promise) {
         safeThread(promise) {
@@ -125,7 +141,7 @@ class IMAPClient : AbstractMailClient() {
             val folder = imapStore.getFolder(obj.getString("folder")) as IMAPFolder
             var found = false
             folder.open(Folder.READ_WRITE)
-            for (message in folder.messages.reversed()) {
+            for (message in folder.messages) {
                 message as MimeMessage
 
                 fun getAddress(type: Message.RecipientType) =

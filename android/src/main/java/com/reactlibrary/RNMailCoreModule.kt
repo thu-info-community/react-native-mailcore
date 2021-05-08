@@ -95,23 +95,12 @@ class RNMailCoreModule(reactContext: ReactApplicationContext) : ReactContextBase
     }
 
     @ReactMethod
-    fun getMailsThread(obj: ReadableMap, promise: Promise) {
-        TODO("`getMailsThread` is not supported yet.")
+    fun getMailsByRange(obj: ReadableMap, promise: Promise) {
+        safeWrapper(promise) { imapClient.getMailsByRange(obj, promise) }
     }
 
     @ReactMethod
     fun statusFolder(obj: ReadableMap, promise: Promise) {
         safeWrapper(promise) { imapClient.statusFolder(obj, promise) }
     }
-
-    @ReactMethod
-    fun getMailsByRange(obj: ReadableMap, promise: Promise) {
-        TODO("`getMailsByRange` is not supported yet.")
-    }
-
-    @ReactMethod
-    fun getMailsByThread(obj: ReadableMap, promise: Promise) {
-        TODO("`getMailsByThread` is not supported yet.")
-    }
-
 }
