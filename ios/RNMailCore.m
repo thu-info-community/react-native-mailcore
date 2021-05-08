@@ -219,7 +219,7 @@ RCT_EXPORT_METHOD(moveEmail:(NSDictionary *)obj resolver:(RCTPromiseResolveBlock
     }];
 }
 
-RCT_EXPORT_METHOD(permantDeleteEmail:(NSDictionary *)obj resolver:(RCTPromiseResolveBlock)resolve
+RCT_EXPORT_METHOD(permanentDeleteEmail:(NSDictionary *)obj resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 {
     NSString *folder = [RCTConvert NSString:obj[@"folder"]];

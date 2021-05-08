@@ -74,6 +74,14 @@ export function moveEmail({
     messageId: number;
 }): Response<{}>;
 
+export function permanentDeleteEmail({
+    folderFrom,
+    messageId,
+}: {
+    folderFrom: string;
+    messageId: number;
+}): Response<{}>;
+
 export function getMails({
     folder,
     requestKind,

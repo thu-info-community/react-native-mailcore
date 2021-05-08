@@ -188,10 +188,10 @@ MailCore.moveEmail({
   });
 ```
 
-- Permant Email Delete
+- Permanent Email Delete
 
 ```javascript
-MailCore.permantDeleteEmail({
+MailCore.permanentDeleteEmail({
   folderFrom: "folder",
   messageId: messageId,
 })
@@ -298,10 +298,10 @@ MailCore.moveEmail({
   });
 ```
 
-- Permant Email Delete
+- Permanent Email Delete
 
 ```javascript
-MailCore.permantDeleteEmail({
+MailCore.permanentDeleteEmail({
   folderFrom: "folder",
   messageId: messageId,
 })

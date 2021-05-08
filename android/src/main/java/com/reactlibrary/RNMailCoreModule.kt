@@ -56,7 +56,7 @@ class RNMailCoreModule(reactContext: ReactApplicationContext) : ReactContextBase
 
     @ReactMethod
     fun permanentDeleteEmail(obj: ReadableMap, promise: Promise) {
-        TODO("`permanentDeleteEmail` is not supported yet.")
+        safeWrapper(promise) { imapClient.permanentDeleteEmail(obj, promise) }
     }
 
     @ReactMethod

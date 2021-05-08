@@ -80,6 +80,20 @@ class IMAPClient : AbstractMailClient() {
         }
     }
 
+    fun permanentDeleteEmail(obj: ReadableMap, promise: Promise) {
+        safeThread(promise) {
+            with(imapStore.defaultFolder) {
+                val from = getFolder(obj.getString("folderFrom"))
+                val id = obj.getString("messageId")
+                from.open(Folder.READ_WRITE)
+                from.messages
+                    .first { message -> (message as MimeMessage).messageID == id }
+                    .setFlag(Flags.Flag.DELETED, true)
+            }
+            promise.callback()
+        }
+    }
+
     fun getMails(obj: ReadableMap, promise: Promise) {
         safeThread(promise) {
             promise.callback {
