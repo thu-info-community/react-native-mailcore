@@ -26,14 +26,17 @@ class IMAPClient : AbstractMailClient() {
     }
 
     fun getFolders(promise: Promise) {
-        // TODO: truly implement this
-        promise.callback {
-            val a: WritableArray = WritableNativeArray()
-            val mapFolder = Arguments.createMap()
-            mapFolder.putString("path", "inbox")
-            mapFolder.putInt("flags", 0)
-            a.pushMap(mapFolder)
-            it.putArray("folders", a)
+        safeThread(promise) {
+            promise.callback {
+                val a: WritableArray = WritableNativeArray()
+                imapStore.defaultFolder.list("*").forEach { folder ->
+                    val mapFolder = Arguments.createMap()
+                    mapFolder.putString("path", folder.name)
+                    mapFolder.putInt("flags", 0)
+                    a.pushMap(mapFolder)
+                }
+                it.putArray("folders", a)
+            }
         }
     }
 
