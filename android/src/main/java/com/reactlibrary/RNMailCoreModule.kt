@@ -51,7 +51,7 @@ class RNMailCoreModule(reactContext: ReactApplicationContext) : ReactContextBase
 
     @ReactMethod
     fun moveEmail(obj: ReadableMap, promise: Promise) {
-        TODO("`moveEmail` is not supported yet.")
+        safeWrapper(promise) { imapClient.moveEmail(obj, promise) }
     }
 
     @ReactMethod

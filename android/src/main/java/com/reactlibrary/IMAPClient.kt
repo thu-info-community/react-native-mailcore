@@ -65,6 +65,21 @@ class IMAPClient : AbstractMailClient() {
         }
     }
 
+    fun moveEmail(obj: ReadableMap, promise: Promise) {
+        safeThread(promise) {
+            with(imapStore.defaultFolder) {
+                val from = getFolder(obj.getString("folderFrom"))
+                val to = getFolder(obj.getString("folderTo"))
+                val id = obj.getString("messageId")
+                from.open(Folder.READ_WRITE)
+                val msg = from.messages.filter { message -> (message as MimeMessage).messageID == id }.toTypedArray()
+                from.copyMessages(msg, to)
+                from.setFlags(msg, Flags(Flags.Flag.DELETED), true)
+            }
+            promise.callback()
+        }
+    }
+
     fun getMails(obj: ReadableMap, promise: Promise) {
         safeThread(promise) {
             promise.callback {

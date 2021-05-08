@@ -54,15 +54,25 @@ export function createFolder({folder}: {folder: string}): Response<{}>;
 
 export function renameFolder({
     folderOldName,
-    folderNewName
+    folderNewName,
 }: {
     folderOldName: string;
-    folderNewName: string
+    folderNewName: string;
 }): Response<{}>;
 
 export function deleteFolder({folder}: {folder: string}): Response<{}>;
 
 export function getFolders(): Response<{folders: Folder[]}>;
+
+export function moveEmail({
+    folderFrom,
+    folderTo,
+    messageId,
+}: {
+    folderFrom: string;
+    folderTo: string;
+    messageId: number;
+}): Response<{}>;
 
 export function getMails({
     folder,
