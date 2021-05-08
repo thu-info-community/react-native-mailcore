@@ -1,6 +1,6 @@
 
 buildscript {
-    ext.kotlin_version="1.4.10"
+    ext.kotlin_version="1.5.0"
 
     repositories {
         google()
@@ -17,12 +17,11 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion 30
 
     defaultConfig {
         minSdkVersion 16
-        //noinspection OldTargetApi
-        targetSdkVersion 28
+        targetSdkVersion 30
         versionCode 1
         versionName "1.0"
     }
