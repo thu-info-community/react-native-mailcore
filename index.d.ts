@@ -44,6 +44,12 @@ interface MailDetail extends Omit<Omit<Mail, "attachments">, "from"> {
     inline: {[key: number]: InlineAttachment};
 }
 
+interface FolderStatus {
+    unseenCount: number;
+    messageCount: number;
+    recentCount: number;
+}
+
 type Response<T> = Promise<T & {status: string}>;
 
 export function loginImap(config: LoginConfig): Response<{}>;
@@ -110,3 +116,7 @@ export function sendMail({}: {
     body: string;
     attachments?: string[];
 }): Response<{}>;
+
+export function statusFolder({}: {
+    folder: string;
+}): Response<FolderStatus>;

@@ -230,6 +230,18 @@ class IMAPClient : AbstractMailClient() {
         }
     }
 
+    fun statusFolder(obj: ReadableMap, promise: Promise) {
+        safeThread(promise) {
+            promise.callback { statusData ->
+                with(imapStore.getFolder(obj.getString("folder"))) {
+                    statusData.putInt("unseenCount", unreadMessageCount)
+                    statusData.putInt("messageCount", messageCount)
+                    statusData.putInt("recentCount", 0)  // WHAT IS THIS ???
+                }
+            }
+        }
+    }
+
     class EmailAddress(internetAddress: InternetAddress) {
         private fun getName(s: String) = with(s.indexOf('@')) { if (this == -1) s else s.substring(0, this) }
 

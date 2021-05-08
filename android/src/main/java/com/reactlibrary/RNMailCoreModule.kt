@@ -101,7 +101,7 @@ class RNMailCoreModule(reactContext: ReactApplicationContext) : ReactContextBase
 
     @ReactMethod
     fun statusFolder(obj: ReadableMap, promise: Promise) {
-        TODO("`statusFolder` is not supported yet.")
+        safeWrapper(promise) { imapClient.statusFolder(obj, promise) }
     }
 
     @ReactMethod
