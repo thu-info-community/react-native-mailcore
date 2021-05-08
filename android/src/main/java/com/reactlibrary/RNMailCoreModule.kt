@@ -31,17 +31,17 @@ class RNMailCoreModule(reactContext: ReactApplicationContext) : ReactContextBase
 
     @ReactMethod
     fun createFolder(obj: ReadableMap, promise: Promise) {
-        TODO("`createFolder` is not supported yet.")
+        safeWrapper(promise) { imapClient.createFolder(obj, promise) }
     }
 
     @ReactMethod
     fun renameFolder(obj: ReadableMap, promise: Promise) {
-        TODO("`renameFolder` is not supported yet.")
+        safeWrapper(promise) { imapClient.renameFolder(obj, promise) }
     }
 
     @ReactMethod
     fun deleteFolder(obj: ReadableMap, promise: Promise) {
-        TODO("`deleteFolder` is not supported yet.")
+        safeWrapper(promise) { imapClient.deleteFolder(obj, promise) }
     }
 
     @ReactMethod

@@ -25,6 +25,31 @@ class IMAPClient : AbstractMailClient() {
         }
     }
 
+    fun createFolder(obj: ReadableMap, promise: Promise) {
+        safeThread(promise) {
+            imapStore.defaultFolder.getFolder(obj.getString("folder")).create(Folder.HOLDS_MESSAGES)
+            promise.callback()
+        }
+    }
+
+    fun renameFolder(obj: ReadableMap, promise: Promise) {
+        safeThread(promise) {
+            with(imapStore.defaultFolder) {
+                val oldFolder = getFolder(obj.getString("folderOldName"))
+                val newFolder = getFolder(obj.getString("folderNewName"))
+                oldFolder.renameTo(newFolder)
+            }
+            promise.callback()
+        }
+    }
+
+    fun deleteFolder(obj: ReadableMap, promise: Promise) {
+        safeThread(promise) {
+            imapStore.defaultFolder.getFolder(obj.getString("folder")).delete(true)
+            promise.callback()
+        }
+    }
+
     fun getFolders(promise: Promise) {
         safeThread(promise) {
             promise.callback {

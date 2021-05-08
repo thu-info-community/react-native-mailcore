@@ -50,6 +50,18 @@ export function loginImap(config: LoginConfig): Response<{}>;
 
 export function loginSmtp(config: LoginConfig): Response<{}>;
 
+export function createFolder({folder}: {folder: string}): Response<{}>;
+
+export function renameFolder({
+    folderOldName,
+    folderNewName
+}: {
+    folderOldName: string;
+    folderNewName: string
+}): Response<{}>;
+
+export function deleteFolder({folder}: {folder: string}): Response<{}>;
+
 export function getFolders(): Response<{folders: Folder[]}>;
 
 export function getMails({
