@@ -5,8 +5,10 @@
   "main": "index.js",
   "types": "index.d.ts",
   "files": [
-    "android/**/*",
-    "ios/**/*"
+    "android/build.gradle",
+    "android/src/**/*",
+    "ios/**/*",
+    "index.d.ts"
   ],
   "repository": {
     "type": "git",
