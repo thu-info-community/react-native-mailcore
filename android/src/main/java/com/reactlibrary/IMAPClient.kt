@@ -28,8 +28,8 @@ class IMAPClient : AbstractMailClient() {
     private fun makeMailData(message: MimeMessage) = Arguments.createMap().apply {
         putMap("headers", Arguments.createMap())
         putString("id", message.messageID)
-        // putInt("flags", it.flags.systemFlags.sumBy { flag->flag. })
-        putInt("flags", 0)
+        // http://libmailcore.com/api/java/com/libmailcore/MessageFlag.html
+        putInt("flags", if (message.flags.contains(Flags.Flag.SEEN)) 1 else 0)
         putString("from", EmailAddress(message.from[0] as InternetAddress).toString())
         putString("subject", message.subject ?: "[无主题]")
         putString("date", message.sentDate.toString())
@@ -152,8 +152,7 @@ class IMAPClient : AbstractMailClient() {
                     promise.callback { mailData ->
                         mailData.putString("id", messageId)
                         mailData.putString("date", message.sentDate.toString())
-                        // TODO: flags
-                        mailData.putInt("flags", 0)
+                        mailData.putInt("flags", if (message.flags.contains(Flags.Flag.SEEN)) 1 else 0)
                         val fromData = Arguments.createMap()
                         val fromAddress = EmailAddress(message.from[0] as InternetAddress)
                         fromData.putString("mailbox", fromAddress.email)
