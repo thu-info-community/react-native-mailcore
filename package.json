@@ -8,7 +8,8 @@
     "android/build.gradle",
     "android/src/**/*",
     "ios/**/*",
-    "index.d.ts"
+    "index.d.ts",
+    "THUInfoMailcore.podspec"
   ],
   "repository": {
     "type": "git",

@@ -206,7 +206,14 @@ class IMAPClient : AbstractMailClient() {
                         }
 
                         parsePart(message)
-                        mailData.putString("body", emailContent.html)
+                        mailData.putString(
+                            "body",
+                            when {
+                                emailContent.hasHtml -> emailContent.html
+                                emailContent.hasPlain -> emailContent.plain
+                                else -> ""
+                            }
+                        )
 
                         val attachmentsData = Arguments.createMap()
                         /* for (attachment in emailContent.attachments) {
@@ -271,8 +278,8 @@ class IMAPClient : AbstractMailClient() {
         lateinit var html: String
         val attachments = mutableListOf<Part>()
         val images = mutableMapOf<String, Part>()
-        private val hasPlain: Boolean get() = ::plain.isInitialized
-        private val hasHtml: Boolean get() = ::html.isInitialized
+        val hasPlain: Boolean get() = ::plain.isInitialized
+        val hasHtml: Boolean get() = ::html.isInitialized
 
         private fun Part.decodedFileName(): String = MimeUtility.decodeText(fileName)
 

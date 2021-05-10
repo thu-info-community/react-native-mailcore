@@ -2,7 +2,7 @@
 
 react native bindings for https://github.com/MailCore/mailcore2, based on [react-native-mailcore](https://github.com/agenthunt/react-native-mailcore), customized for thu-info
 
-> WARNING: For projects targeting API 30 and above, exclude `'META-INF/NOTICE.md'` and `'META-INF/LICENSE.md'` in your `app/build.gradle`
+> WARNING: For android projects targeting API 30 and above, exclude `'META-INF/NOTICE.md'` and `'META-INF/LICENSE.md'` in your `app/build.gradle`
 > 
 > For more information, see https://issuetracker.google.com/issues/172544275
 
