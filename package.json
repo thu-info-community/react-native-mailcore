@@ -1,6 +1,6 @@
 {
   "name": "thu-info-mailcore",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "React Native bindings for https://github.com/MailCore/mailcore2, based on react-native-mailcore, customized for thu-info",
   "main": "index.js",
   "types": "index.d.ts",
